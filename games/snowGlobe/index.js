@@ -1,4 +1,4 @@
-const N_FLAKES = 300;
+const N_FLAKES = 480;
 
 function makeFlake(cx, cy, gR) {
   const a = Math.random() * Math.PI * 2;
@@ -70,17 +70,17 @@ const snowGlobeGame = {
       const dx = f.x - this._mx;
       const dy = f.y - this._my;
       const d2 = dx * dx + dy * dy;
-      const stir = 65;
-      if (mSpeed > 15 && d2 < stir * stir) {
+      const stir = 95;
+      if (mSpeed > 10 && d2 < stir * stir) {
         const d   = Math.sqrt(d2) || 1;
-        const frc = (1 - d / stir) * mSpeed * 0.11;
-        f.vx += (mvx / mSpeed) * frc + (Math.random() - 0.5) * frc * 0.5;
-        f.vy += (mvy / mSpeed) * frc - Math.random() * frc * 0.3;
+        const frc = (1 - d / stir) * mSpeed * 0.26;
+        f.vx += (mvx / mSpeed) * frc + (Math.random() - 0.5) * frc * 0.6;
+        f.vy += (mvy / mSpeed) * frc - Math.random() * frc * 0.5;
       }
 
-      f.vy += 28 * s;
-      f.vx *= 1 - 2.5 * s;
-      f.vy *= 1 - 2.5 * s;
+      f.vy += 26 * s;
+      f.vx *= 1 - 1.6 * s;
+      f.vy *= 1 - 1.6 * s;
       f.vx += (Math.random() - 0.5) * 4 * s;
       f.x  += f.vx * s;
       f.y  += f.vy * s;

@@ -1,8 +1,25 @@
-const N_BLOBS = 7;
-const SC      = 4;     // 1 grid px = SC canvas px
+// Лавовая лампа: метаболы на всём холсте.
+// Клик — расщепить ближайший шар. Шары автоматически сливаются при касании.
+
+const SC       = 4;     // масштаб пиксельной сетки
+const MAX_R    = 50;    // макс. радиус после слияний
+const MIN_R    = 10;    // мин. радиус для расщепления
+const MAX_BLOBS = 18;
+const MERGE_THRESH = 0.60; // доля (r1+r2), при которой происходит слияние
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 function lerp(a, b, t)     { return a + (b - a) * t; }
+
+function makeBlob(W, H, r) {
+  return {
+    x:  r + Math.random() * (W - 2 * r),
+    y:  r + Math.random() * (H - 2 * r),
+    vx: (Math.random() - 0.5) * 30,
+    vy: (Math.random() - 0.5) * 30,
+    r,
+    r2: r * r,
+  };
+}
 
 const lavaLampGame = {
   name:  'lavaLamp',
@@ -15,88 +32,129 @@ const lavaLampGame = {
     this._W      = canvas.width;
     this._H      = canvas.height;
 
-    const W = this._W, H = this._H;
-
-    // Tube geometry
-    this._tx = Math.round(W * 0.19);
-    this._tw = Math.round(W * 0.62);
-    this._ty = Math.round(H * 0.05);
-    this._th = Math.round(H * 0.86);
-
-    // Pixel grid
-    this._gW = Math.ceil(W / SC);
-    this._gH = Math.ceil(H / SC);
+    this._gW = Math.ceil(this._W / SC);
+    this._gH = Math.ceil(this._H / SC);
     this._off = document.createElement('canvas');
     this._off.width  = this._gW;
     this._off.height = this._gH;
     this._xo = this._off.getContext('2d');
     this._id = this._xo.createImageData(this._gW, this._gH);
 
-    const tL = this._tx, tR = this._tx + this._tw;
-    const tT = this._ty, tB = this._ty + this._th;
+    // Начальные шары: 10 штук, небольшого размера
+    this._blobs = Array.from({ length: 10 }, () =>
+      makeBlob(this._W, this._H, 12 + Math.random() * 14)
+    );
 
-    this._blobs = Array.from({ length: N_BLOBS }, () => {
-      const r = 22 + Math.random() * 30;
-      return {
-        x:  lerp(tL + r, tR - r, Math.random()),
-        y:  lerp(tT + r, tB - r, Math.random()),
-        vx: (Math.random() - 0.5) * 28,
-        vy: (Math.random() - 0.5) * 28,
-        r, r2: r * r,
-      };
-    });
+    this._onClick = this._onClick.bind(this);
+    canvas.addEventListener('mousedown',  this._onClick);
+    canvas.addEventListener('touchstart', this._onClick, { passive: true });
+  },
+
+  _pt(cx, cy) {
+    const r = this._canvas.getBoundingClientRect();
+    return {
+      x: (cx - r.left) * (this._canvas.width  / r.width),
+      y: (cy - r.top)  * (this._canvas.height / r.height),
+    };
+  },
+
+  _onClick(e) {
+    const src = e.touches ? e.touches[0] : e;
+    const p   = this._pt(src.clientX, src.clientY);
+    let bestDist = Infinity, bestIdx = -1;
+    for (let i = 0; i < this._blobs.length; i++) {
+      const b = this._blobs[i];
+      const d = Math.hypot(p.x - b.x, p.y - b.y);
+      if (d < b.r + 12 && d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    if (bestIdx < 0) return;
+    const b = this._blobs[bestIdx];
+    if (b.r < MIN_R || this._blobs.length >= MAX_BLOBS) return;
+
+    const nr    = b.r / Math.SQRT2;
+    const angle = Math.random() * Math.PI * 2;
+    const off   = nr * 0.7;
+    const b2 = {
+      x: b.x + Math.cos(angle) * off, y: b.y + Math.sin(angle) * off,
+      vx: b.vx + Math.cos(angle) * 25, vy: b.vy + Math.sin(angle) * 25,
+      r: nr, r2: nr * nr,
+    };
+    b.x -= Math.cos(angle) * off;  b.y -= Math.sin(angle) * off;
+    b.vx -= Math.cos(angle) * 25;  b.vy -= Math.sin(angle) * 25;
+    b.r = nr; b.r2 = nr * nr;
+    this._blobs.push(b2);
   },
 
   update(dt) {
     const s = Math.min(dt / 1000, 0.05);
-    const { _W: W, _H: H, _blobs: blobs, _gW: gW, _gH: gH } = this;
-    const { _tx: tx, _tw: tw, _ty: ty, _th: th } = this;
-    const tL = tx, tR = tx + tw, tT = ty, tB = ty + th;
+    const { _W: W, _H: H, _gW: gW, _gH: gH } = this;
+    let blobs = this._blobs;
 
     // Physics
     for (const b of blobs) {
-      const normY = (b.y - tT) / th;    // 0=top, 1=bottom
-      const buoy  = (normY - 0.28) * 58;
-      b.vy += -buoy * s;
-      b.vx += (Math.random() - 0.5) * 28 * s;
-      b.vy += (Math.random() - 0.5) * 14 * s;
-      b.vx *= Math.pow(0.12, s);
-      b.vy *= Math.pow(0.30, s);
-      b.vx  = clamp(b.vx, -60, 60);
-      b.vy  = clamp(b.vy, -85, 85);
+      const normY = b.y / H;  // 0=top, 1=bottom → тепло внизу
+      b.vy += -(normY - 0.30) * 60 * s;         // плавучесть
+      b.vx += (Math.random() - 0.5) * 22 * s;
+      b.vy += (Math.random() - 0.5) * 12 * s;
+      b.vx *= Math.pow(0.10, s);
+      b.vy *= Math.pow(0.28, s);
+      b.vx  = clamp(b.vx, -65, 65);
+      b.vy  = clamp(b.vy, -90, 90);
       b.x  += b.vx * s;
       b.y  += b.vy * s;
-      if (b.x < tL + b.r)  { b.x = tL + b.r;  b.vx =  Math.abs(b.vx) * 0.45; }
-      if (b.x > tR - b.r)  { b.x = tR - b.r;  b.vx = -Math.abs(b.vx) * 0.45; }
-      if (b.y < tT + b.r)  { b.y = tT + b.r;  b.vy =  Math.abs(b.vy) * 0.30; }
-      if (b.y > tB - b.r)  { b.y = tB - b.r;  b.vy = -Math.abs(b.vy) * 0.30; }
+      if (b.x < b.r)       { b.x = b.r;       b.vx =  Math.abs(b.vx) * 0.5; }
+      if (b.x > W - b.r)   { b.x = W - b.r;   b.vx = -Math.abs(b.vx) * 0.5; }
+      if (b.y < b.r)       { b.y = b.r;       b.vy =  Math.abs(b.vy) * 0.3; }
+      if (b.y > H - b.r)   { b.y = H - b.r;   b.vy = -Math.abs(b.vy) * 0.3; }
     }
 
-    // Metaball pixel rendering
+    // Слияния: один проход, O(n²)
+    const merged = new Uint8Array(blobs.length);
+    const next   = [];
+    for (let i = 0; i < blobs.length; i++) {
+      if (merged[i]) continue;
+      let b = blobs[i];
+      for (let j = i + 1; j < blobs.length; j++) {
+        if (merged[j]) continue;
+        const bj = blobs[j];
+        const d  = Math.hypot(b.x - bj.x, b.y - bj.y);
+        if (d < (b.r + bj.r) * MERGE_THRESH) {
+          const ra2 = b.r2, rb2 = bj.r2, tot = ra2 + rb2;
+          b = {
+            x:  (b.x * ra2 + bj.x * rb2) / tot,
+            y:  (b.y * ra2 + bj.y * rb2) / tot,
+            vx: (b.vx * ra2 + bj.vx * rb2) / tot,
+            vy: (b.vy * ra2 + bj.vy * rb2) / tot,
+            r:  Math.min(Math.sqrt(tot), MAX_R),
+            r2: 0,
+          };
+          b.r2 = b.r * b.r;
+          merged[j] = 1;
+        }
+      }
+      next.push(b);
+    }
+    this._blobs = blobs = next;
+
+    // Рендер метабол на пиксельной сетке
     const data = this._id.data;
     for (let gy = 0; gy < gH; gy++) {
       const py = gy * SC;
       for (let gx = 0; gx < gW; gx++) {
         const px = gx * SC;
         const i  = (gy * gW + gx) * 4;
-
-        if (px < tL || px > tR || py < tT || py > tB) {
-          data[i + 3] = 0; continue;
-        }
-
         let field = 0;
         for (const b of blobs) {
           const dx = px - b.x, dy = py - b.y;
           const d2 = dx * dx + dy * dy || 0.001;
           field += b.r2 / d2;
         }
-
-        if (field >= 0.58) {
-          const alpha = clamp((field - 0.58) / 0.52, 0, 1);
-          const yr    = 1 - (py - tT) / th;   // 1=top, 0=bottom
-          data[i]     = Math.round(lerp(205, 255, 1 - yr * 0.12));
-          data[i + 1] = Math.round(lerp(88,  165, 1 - yr));
-          data[i + 2] = Math.round(lerp(8,   28,  yr));
+        if (field >= 0.55) {
+          const alpha = clamp((field - 0.55) / 0.55, 0, 1);
+          const yr    = 1 - py / H;   // 1=top, 0=bottom
+          data[i]     = Math.round(lerp(215, 255, 1 - yr * 0.1));
+          data[i + 1] = Math.round(lerp(95,  170, 1 - yr));
+          data[i + 2] = Math.round(lerp(8,   25,  yr));
           data[i + 3] = Math.round(alpha * 245);
         } else {
           data[i + 3] = 0;
@@ -105,64 +163,39 @@ const lavaLampGame = {
     }
 
     const ctx = this._ctx;
-    ctx.fillStyle = '#040209';
+
+    // Фон: тёмный с тёплым свечением снизу
+    ctx.fillStyle = '#07040f';
     ctx.fillRect(0, 0, W, H);
 
-    // Liquid background
-    const liq = ctx.createLinearGradient(0, tT, 0, tB);
-    liq.addColorStop(0,   '#0f0805');
-    liq.addColorStop(0.5, '#180c06');
-    liq.addColorStop(1,   '#1d0e06');
-    ctx.fillStyle = liq;
-    ctx.fillRect(tx, ty, tw, th);
+    const heatGlow = ctx.createRadialGradient(W / 2, H + 20, 10, W / 2, H + 20, W * 0.85);
+    heatGlow.addColorStop(0, 'rgba(255,100,15,0.18)');
+    heatGlow.addColorStop(1, 'rgba(255,100,15,0)');
+    ctx.fillStyle = heatGlow;
+    ctx.fillRect(0, H * 0.55, W, H * 0.45);
 
-    // Blobs (clipped to tube)
+    // Метаболы
     this._xo.putImageData(this._id, 0, 0);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(tx, ty, tw, th);
-    ctx.clip();
     ctx.drawImage(this._off, 0, 0, W, H);
-    ctx.restore();
 
-    this._drawTube(ctx, W, H, tx, tw, ty, th);
-  },
+    // Виньетка
+    const vig = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * 0.52);
+    vig.addColorStop(0.5, 'rgba(0,0,0,0)');
+    vig.addColorStop(1,   'rgba(0,0,0,0.38)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
 
-  _drawTube(ctx, W, H, tx, tw, ty, th) {
-    // Left glass reflection
-    const refL = ctx.createLinearGradient(tx, 0, tx + tw * 0.14, 0);
-    refL.addColorStop(0, 'rgba(255,185,70,0.13)');
-    refL.addColorStop(1, 'rgba(255,185,70,0)');
-    ctx.fillStyle = refL;
-    ctx.fillRect(tx, ty, tw * 0.14, th);
-
-    // Right shadow
-    const refR = ctx.createLinearGradient(tx + tw * 0.86, 0, tx + tw, 0);
-    refR.addColorStop(0, 'rgba(0,0,0,0)');
-    refR.addColorStop(1, 'rgba(0,0,0,0.32)');
-    ctx.fillStyle = refR;
-    ctx.fillRect(tx + tw * 0.86, ty, tw * 0.14, th);
-
-    ctx.strokeStyle = 'rgba(175,120,55,0.28)';
-    ctx.lineWidth   = 1.5;
-    ctx.strokeRect(tx, ty, tw, th);
-
-    // Caps
-    const capH = Math.round(H * 0.055);
-    ctx.fillStyle = '#100802';
-    ctx.fillRect(tx - 9, tT - capH, tw + 18, capH);
-    ctx.fillRect(tx - 9, ty + th,   tw + 18, capH);
-    ctx.strokeStyle = 'rgba(145,95,38,0.28)';
-    ctx.lineWidth   = 1;
-    ctx.strokeRect(tx - 9, ty - capH, tw + 18, capH);
-    ctx.strokeRect(tx - 9, ty + th,   tw + 18, capH);
-
-    // Heat glow at base
-    const glow = ctx.createRadialGradient(tx + tw / 2, ty + th + 18, 6, tx + tw / 2, ty + th + 18, tw * 0.68);
-    glow.addColorStop(0, 'rgba(255,110,18,0.14)');
-    glow.addColorStop(1, 'rgba(255,110,18,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, ty + th - 30, W, capH + 70);
+    // Подсказка
+    if (blobs.length < 3 || (blobs.length === 1 && blobs[0].r < 18)) {
+      ctx.save();
+      ctx.globalAlpha  = 0.3;
+      ctx.fillStyle    = '#ffb050';
+      ctx.font         = '11px sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Нажмите на шар — расщепить', W / 2, H - 18);
+      ctx.restore();
+    }
   },
 
   handleInput() {},
@@ -170,6 +203,8 @@ const lavaLampGame = {
   resume() {},
 
   destroy() {
+    this._canvas.removeEventListener('mousedown',  this._onClick);
+    this._canvas.removeEventListener('touchstart', this._onClick);
     this._off = null;
     this._xo  = null;
     this._id  = null;

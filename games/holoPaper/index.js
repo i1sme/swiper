@@ -2,7 +2,7 @@
 // Рисуешь мышью — проявляешь то, что скрыто под тёмным слоем.
 // Одно и то же место всегда даёт один и тот же цвет: как натирание монеты.
 
-const BRUSH_R   = 18;   // радиус кисти
+const BRUSH_R   = 8;    // радиус кисти
 const MIN_DIST  = 2;    // минимальный шаг
 
 // Простой hash-based value noise без внешних зависимостей
@@ -79,9 +79,9 @@ const holoPaperGame = {
       for (let px = 0; px < W; px++) {
         const n = fNoise(px / scale, py / scale, seed);
         // Второй слой шума сдвигает оттенок — создаёт радужные переливы
-        const n2 = fNoise(px / (scale * 1.7) + 100, py / (scale * 1.7), seed + 500);
-        const hue = (n * 260 + n2 * 100) % 360;
-        const [r, g, b] = hslToRgb(hue, 90, 55);
+        const n2 = fNoise(px / (scale * 1.4) + 100, py / (scale * 1.4), seed + 500);
+        const hue = (n * 360 + n2 * 220) % 360;
+        const [r, g, b] = hslToRgb(hue, 100, 60);
         const idx  = (py * W + px) * 4;
         d[idx]     = r;
         d[idx + 1] = g;
@@ -122,12 +122,7 @@ const holoPaperGame = {
   _fillFog() {
     const fc = this._fogCtx;
     fc.globalCompositeOperation = 'source-over';
-    // Бумажный фон: тёплый светлый цвет
-    const g = fc.createLinearGradient(0, 0, this._W, this._H);
-    g.addColorStop(0,   '#f2eeea');
-    g.addColorStop(0.5, '#ece8e3');
-    g.addColorStop(1,   '#efeae6');
-    fc.fillStyle = g;
+    fc.fillStyle = '#000000';
     fc.fillRect(0, 0, this._W, this._H);
   },
 

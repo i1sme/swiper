@@ -1,7 +1,7 @@
 const COLS = 85;
 const ROWS = 105;
-const D    = 0.19;     // diffusion coefficient (< 0.25 for stability)
-const DECAY = 0.9965;  // per-frame ink fade
+const D    = 0.22;     // diffusion coefficient (< 0.25 for stability)
+const DECAY = 0.9975;  // per-frame ink fade
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -146,9 +146,9 @@ const inkGame = {
     for (let i = 0; i < COLS * ROWS; i++) {
       const c = grid[i];
       const j = i * 4;
-      data[j]     = Math.round(lerp(242, 14, c));
-      data[j + 1] = Math.round(lerp(240, 18, c));
-      data[j + 2] = Math.round(lerp(234, 62, c));
+      data[j]     = Math.round(lerp(240, 5,  c));
+      data[j + 1] = Math.round(lerp(238, 6,  c));
+      data[j + 2] = Math.round(lerp(232, 35, c));
       data[j + 3] = 255;
     }
     this._xo.putImageData(this._id, 0, 0);
