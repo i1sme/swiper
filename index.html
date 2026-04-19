@@ -40,6 +40,13 @@
     import newtonCradleGame   from './games/newtonCradle/index.js';
     import metronomeGame      from './games/metronome/index.js';
 
+    import lavaLampGame       from './games/lavaLamp/index.js';
+    import auroraGame         from './games/aurora/index.js';
+    import inkGame            from './games/ink/index.js';
+    import aquariumGame       from './games/aquarium/index.js';
+    import leavesGame         from './games/leaves/index.js';
+    import snowGlobeGame      from './games/snowGlobe/index.js';
+
     const canvas  = document.getElementById('game-canvas');
     const manager = new GameManager(canvas);
 
@@ -54,6 +61,13 @@
     manager.register(holoPaperGame);
     manager.register(newtonCradleGame);
     manager.register(metronomeGame);
+
+    manager.register(lavaLampGame);
+    manager.register(auroraGame);
+    manager.register(inkGame);
+    manager.register(aquariumGame);
+    manager.register(leavesGame);
+    manager.register(snowGlobeGame);
 
     const shell = new WidgetShell(
       document.getElementById('widget'),

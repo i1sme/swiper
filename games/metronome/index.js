@@ -55,13 +55,21 @@ const metronomeGame = {
     this._pivotX = Math.round(this._W / 2);
     this._pivotY = Math.round(this._H * 0.66);
 
-    this._bpm       = 96;
+    this._bpm       = 72;
     this._wt        = bpmToWt(this._bpm);
     this._theta     = AMP_TGT;
     this._omega     = 0;
     this._prevSign  = 1;
     this._tickFlash = 0;
     this._dragging  = false;
+    this._stopping  = false;
+
+    // Кнопка «стоп» — правая нижняя часть корпуса
+    this._stopBtn = {
+      x: Math.round(this._W / 2) + 30,
+      y: (this._H - 14) - 24,
+      r: 9,
+    };
 
     this._onDown = this._onDown.bind(this);
     this._onMove = this._onMove.bind(this);
@@ -110,6 +118,12 @@ const metronomeGame = {
       e.touches ? e.touches[0].clientX : e.clientX,
       e.touches ? e.touches[0].clientY : e.clientY
     );
+    // Кнопка «стоп»
+    if (Math.hypot(pt.x - this._stopBtn.x, pt.y - this._stopBtn.y) < this._stopBtn.r + 6) {
+      this._stopping = true;
+      return;
+    }
+    // Грузик
     const w = this._weightPos();
     if (Math.hypot(pt.x - w.x, pt.y - w.y) < 20) {
       this._dragging = true;
@@ -122,15 +136,20 @@ const metronomeGame = {
       e.touches ? e.touches[0].clientX : e.clientX,
       e.touches ? e.touches[0].clientY : e.clientY
     );
-    // Проекция точки касания на ось стержня
-    const rdx  = Math.sin(this._theta);
-    const rdy  = -Math.cos(this._theta);
-    const proj = (pt.x - this._pivotX) * rdx + (pt.y - this._pivotY) * rdy;
-    this._wt   = Math.max(0.23, Math.min(0.91, proj / ROD_LEN));
-    this._bpm  = wtToBpm(this._wt);
+    // Маятник заморожен во время перетаскивания (theta = 0).
+    // Вертикальная координата курсора напрямую задаёт позицию грузика.
+    const newWt = (this._pivotY - pt.y) / ROD_LEN;
+    this._wt    = Math.max(0.23, Math.min(0.91, newWt));
+    this._bpm   = wtToBpm(this._wt);
   },
 
-  _onUp() { this._dragging = false; },
+  _onUp() {
+    if (this._dragging) {
+      this._stopping = false;
+      this._omega    = 0.3;
+    }
+    this._dragging = false;
+  },
 
   handleInput() {},
   pause()  {},
@@ -141,19 +160,37 @@ const metronomeGame = {
     const ctx   = this._ctx;
     const W = this._W, H = this._H;
 
-    // Физика: гармонический осциллятор + Van der Pol поддержание амплитуды
-    const omega0   = Math.PI * this._bpm / 60;
-    const k        = omega0 * omega0;
-    const prevSign = Math.sign(this._theta);
+    if (this._dragging) {
+      // Маятник заморожен — грузик перемещается на неподвижном стержне (theta=0)
+      this._theta = 0;
+      this._omega = 0;
+    } else if (this._stopping) {
+      // Плавное затухание: пружина работает, но агрессивное демпфирование
+      const omega0 = Math.PI * this._bpm / 60;
+      const k      = omega0 * omega0;
+      this._omega += -k * this._theta * dtSec;
+      this._omega *= Math.pow(0.06, dtSec); // до нуля за ~1.5 сек
+      this._theta += this._omega * dtSec;
+      if (Math.abs(this._omega) < 0.04 && Math.abs(this._theta) < 0.04) {
+        this._theta   = 0;
+        this._omega   = 0;
+        this._stopping = false;
+      }
+    } else {
+      // Физика: гармонический осциллятор + Van der Pol поддержание амплитуды
+      const omega0   = Math.PI * this._bpm / 60;
+      const k        = omega0 * omega0;
+      const prevSign = Math.sign(this._theta);
 
-    this._omega += -k * this._theta * dtSec;
-    this._omega += VDP_K * (1 - (this._theta / AMP_TGT) ** 2) * this._omega * dtSec;
-    this._theta += this._omega * dtSec;
+      this._omega += -k * this._theta * dtSec;
+      this._omega += VDP_K * (1 - (this._theta / AMP_TGT) ** 2) * this._omega * dtSec;
+      this._theta += this._omega * dtSec;
 
-    // Тик при пересечении вертикали
-    const newSign = Math.sign(this._theta);
-    if (prevSign !== 0 && newSign !== 0 && newSign !== prevSign) {
-      this._tickFlash = 0.14;
+      // Тик при пересечении вертикали
+      const newSign = Math.sign(this._theta);
+      if (prevSign !== 0 && newSign !== 0 && newSign !== prevSign) {
+        this._tickFlash = 0.14;
+      }
     }
     if (this._tickFlash > 0) this._tickFlash -= dtSec;
 
@@ -236,6 +273,9 @@ const metronomeGame = {
     // Шкала BPM — отметки на левой грани корпуса (и чуть выше)
     this._drawScale(ctx, cx, caseTop);
 
+    // Кнопка «стоп»
+    this._drawStopButton(ctx);
+
     // Плинтус-основание
     ctx.save();
     ctx.fillStyle = '#0c0804';
@@ -245,6 +285,46 @@ const metronomeGame = {
     ctx.strokeStyle = 'rgba(150,90,20,0.35)';
     ctx.lineWidth   = 1;
     ctx.stroke();
+    ctx.restore();
+  },
+
+  _drawStopButton(ctx) {
+    const { x, y, r } = this._stopBtn;
+    const pressed = this._stopping;
+
+    ctx.save();
+
+    // Тень кнопки
+    ctx.shadowColor   = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur    = pressed ? 2 : 5;
+    ctx.shadowOffsetY = pressed ? 1 : 3;
+
+    // Корпус кнопки — латунный кружок
+    const bg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
+    bg.addColorStop(0,   pressed ? '#c8a020' : '#f0d050');
+    bg.addColorStop(0.6, pressed ? '#8a6010' : '#c89020');
+    bg.addColorStop(1,   '#5a3a00');
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(x, y + (pressed ? 1 : 0), r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Обводка
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = pressed ? 'rgba(80,50,0,0.6)' : 'rgba(255,220,80,0.5)';
+    ctx.lineWidth   = 0.8;
+    ctx.beginPath();
+    ctx.arc(x, y + (pressed ? 1 : 0), r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Надпись «стоп» над кнопкой
+    ctx.globalAlpha  = pressed ? 0.9 : 0.6;
+    ctx.fillStyle    = '#f0d060';
+    ctx.font         = '7px monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('стоп', x, y - r - 3);
+
     ctx.restore();
   },
 
