@@ -34,7 +34,7 @@ function makePendulum(i, pivotX) {
 const pendulumGame = {
   name:  'pendulum',
   label: 'Маятник',
-  icon:  '🎵',
+  icon:  '🌀',
 
   init(canvas, ctx) {
     this._canvas = canvas;

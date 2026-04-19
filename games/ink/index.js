@@ -1,7 +1,7 @@
 const COLS = 85;
 const ROWS = 105;
-const D    = 0.22;     // diffusion coefficient (< 0.25 for stability)
-const DECAY = 0.9975;  // per-frame ink fade
+const D    = 0.14;     // diffusion coefficient (< 0.25 for stability)
+const DECAY = 0.9992;  // per-frame ink fade
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -75,7 +75,7 @@ const inkGame = {
     this._isDown = true;
     const src = e.touches ? e.touches[0] : e;
     const p   = this._pt(src.clientX, src.clientY);
-    this._addInk(p.x, p.y, 1.0);
+    this._addInk(p.x, p.y, 1.5);
     this._lastX = p.x; this._lastY = p.y;
   },
 
@@ -87,7 +87,7 @@ const inkGame = {
     const steps = Math.ceil(Math.hypot(dx, dy) / (this._cw * 0.5)) + 1;
     for (let i = 0; i <= steps; i++) {
       const k = i / steps;
-      this._addInk(this._lastX + dx * k, this._lastY + dy * k, 0.45);
+      this._addInk(this._lastX + dx * k, this._lastY + dy * k, 0.80);
     }
     this._lastX = p.x; this._lastY = p.y;
   },

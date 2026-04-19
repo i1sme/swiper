@@ -41,6 +41,7 @@ const firefliesGame = {
 
     this._mx = -999;
     this._my = -999;
+    this._mSpeed = 0;   // сглаженная скорость мыши (px/событие)
 
     this._onMove  = this._onMove.bind(this);
     this._onLeave = this._onLeave.bind(this);
@@ -88,22 +89,39 @@ const firefliesGame = {
   _onMove(e) {
     const src = e.touches ? e.touches[0] : e;
     const { x, y } = this._clientToCanvas(src.clientX, src.clientY);
+
+    // Обновляем сглаженную скорость (EMA по дельте позиции за событие)
+    if (this._mx > -900) {
+      const delta = Math.hypot(x - this._mx, y - this._my);
+      this._mSpeed = this._mSpeed * 0.65 + delta * 0.35;
+    }
     this._mx = x;
     this._my = y;
 
-    // Пугаем ближайших
+    // Медленное движение (<= SPEED_MIN px/событие) — нет реакции
+    // Быстрое (>= SPEED_MAX) — полный испуг
+    const SPEED_MIN = 4;
+    const SPEED_MAX = 24;
+    const speedFactor = Math.max(0, Math.min(1, (this._mSpeed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)));
+    if (speedFactor <= 0) return;
+
     for (const f of this._flies) {
       const dx = f.x - x, dy = f.y - y;
-      if (Math.hypot(dx, dy) < FLEE_R) {
-        f.scared = SCARE_MS;
-        const dist = Math.hypot(dx, dy) || 1;
-        f.vx = (dx / dist) * FLEE_SPD;
-        f.vy = (dy / dist) * FLEE_SPD;
+      const dist = Math.hypot(dx, dy);
+      if (dist < FLEE_R) {
+        f.scared = Math.max(f.scared, SCARE_MS * speedFactor);
+        const spd = FLEE_SPD * speedFactor;
+        f.vx = (dx / (dist || 1)) * spd;
+        f.vy = (dy / (dist || 1)) * spd;
       }
     }
   },
 
-  _onLeave() { this._mx = -999; this._my = -999; },
+  _onLeave() {
+    this._mx = -999;
+    this._my = -999;
+    this._mSpeed = 0;
+  },
 
   handleInput() {},
   pause()  {},

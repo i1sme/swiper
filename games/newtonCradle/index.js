@@ -110,12 +110,15 @@ const newtonCradleGame = {
     if (this._drag.side === 'left') {
       const px = this._pivots[0];
       const dx = pt.x - px, dy = pt.y - PIVOT_Y;
-      this._lTheta = Math.max(-MAX_THETA, Math.min(-0.01, Math.atan2(dx, dy)));
+      const angle = Math.atan2(dx, dy);
+      // Если мышь переходит за вертикаль сверху (angle >= 0) — держим на MAX_THETA
+      this._lTheta = angle < 0 ? Math.max(-MAX_THETA, angle) : -MAX_THETA;
       this._lOmega = 0;
     } else {
       const px = this._pivots[N - 1];
       const dx = pt.x - px, dy = pt.y - PIVOT_Y;
-      this._rTheta = Math.max(0.01, Math.min(MAX_THETA, Math.atan2(dx, dy)));
+      const angle = Math.atan2(dx, dy);
+      this._rTheta = angle > 0 ? Math.min(MAX_THETA, angle) : MAX_THETA;
       this._rOmega = 0;
     }
   },
@@ -142,7 +145,7 @@ const newtonCradleGame = {
         this._lTheta += this._lOmega * dtSec;
         // Не даём уйти слишком далеко — возможна физическая нестабильность
         if (Math.abs(this._lTheta) > MAX_THETA) {
-          this._lTheta = -MAX_THETA * Math.sign(this._lTheta);
+          this._lTheta = Math.sign(this._lTheta) * MAX_THETA;
           this._lOmega *= -0.85;
         }
       }

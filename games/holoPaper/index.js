@@ -71,7 +71,7 @@ const holoPaperGame = {
     this._texCanvas.width  = W;
     this._texCanvas.height = H;
     const texCtx = this._texCanvas.getContext('2d');
-    const scale  = 7; // масштаб узора (меньше = крупнее)
+    const scale  = 10; // масштаб узора (меньше = крупнее)
 
     const imgData = texCtx.createImageData(W, H);
     const d = imgData.data;
@@ -79,9 +79,9 @@ const holoPaperGame = {
       for (let px = 0; px < W; px++) {
         const n = fNoise(px / scale, py / scale, seed);
         // Второй слой шума сдвигает оттенок — создаёт радужные переливы
-        const n2 = fNoise(px / (scale * 1.4) + 100, py / (scale * 1.4), seed + 500);
-        const hue = (n * 360 + n2 * 220) % 360;
-        const [r, g, b] = hslToRgb(hue, 100, 60);
+        const n2 = fNoise(px / (scale * 2.0) + 100, py / (scale * 2.0), seed + 500);
+        const hue = (n * 360 + n2 * 180) % 360;
+        const [r, g, b] = hslToRgb(hue, 88, 52);
         const idx  = (py * W + px) * 4;
         d[idx]     = r;
         d[idx + 1] = g;

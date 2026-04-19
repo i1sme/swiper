@@ -93,7 +93,7 @@ export default {
     ├── pendulum/index.js       ← маятник-волна (9 шт.)
     ├── campfire/index.js
     ├── holoPaper/index.js
-    ├── newtonsCradle/index.js
+    ├── newtonCradle/index.js
     ├── metronome/index.js
     ├── lavaLamp/index.js
     ├── aurora/index.js

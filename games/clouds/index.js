@@ -96,6 +96,16 @@ const cloudsGame = {
   },
 
   _onUp() {
+    if (this._drag) {
+      const c = this._clouds[this._drag.idx];
+      // Применяем скорость броска (px/event → px/s, ~50 событий/с)
+      const throwX = this._drag.vx * 50;
+      const throwY = this._drag.vy * 50;
+      const spd = Math.hypot(throwX, throwY);
+      const cap = 220;
+      c.vx = spd > cap ? throwX / spd * cap : throwX;
+      c.vy = spd > cap ? throwY / spd * cap : throwY;
+    }
     this._drag = null;
     this._canvas.style.cursor = 'default';
   },
@@ -133,8 +143,9 @@ const cloudsGame = {
     const dy = y - this._drag.prevY;
     c.x += dx;
     c.y += dy;
-    this._drag.vx = dx;
-    this._drag.vy = dy;
+    // EMA — плавно запоминаем скорость для броска при отпускании
+    this._drag.vx = this._drag.vx * 0.5 + dx * 0.5;
+    this._drag.vy = this._drag.vy * 0.5 + dy * 0.5;
     this._drag.prevX = x;
     this._drag.prevY = y;
   },
