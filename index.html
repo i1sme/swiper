@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenWidget</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="widget">
+    <div id="widget-header">
+      <span id="game-label">ZenWidget</span>
+      <div id="header-controls">
+        <button id="btn-picker"   title="Выбрать игру">⊞</button>
+        <button id="btn-minimize" title="Свернуть">–</button>
+      </div>
+    </div>
+    <div id="widget-body">
+      <canvas id="game-canvas"></canvas>
+      <!-- #game-picker добавляется динамически через widgetShell -->
+    </div>
+  </div>
+
+  <script type="module">
+    import { GameManager }   from './core/gameManager.js';
+    import { WidgetShell }   from './core/widgetShell.js';
+
+    // Существующие игры
+    import bubblesGame      from './games/bubbles/index.js';
+    import cloudsGame       from './games/clouds/index.js';
+    import sandGame         from './games/sand/index.js';
+    import zenGardenGame    from './games/zenGarden/index.js';
+    import waterRippleGame  from './games/waterRipple/index.js';
+
+    // Новые игры
+    import firefliesGame      from './games/fireflies/index.js';
+
+    import campfireGame       from './games/campfire/index.js';
+    import holoPaperGame      from './games/holoPaper/index.js';
+    import newtonCradleGame   from './games/newtonCradle/index.js';
+    import metronomeGame      from './games/metronome/index.js';
+
+    const canvas  = document.getElementById('game-canvas');
+    const manager = new GameManager(canvas);
+
+    manager.register(bubblesGame);
+    manager.register(cloudsGame);
+    manager.register(sandGame);
+    manager.register(zenGardenGame);
+    manager.register(waterRippleGame);
+    manager.register(firefliesGame);
+
+    manager.register(campfireGame);
+    manager.register(holoPaperGame);
+    manager.register(newtonCradleGame);
+    manager.register(metronomeGame);
+
+    const shell = new WidgetShell(
+      document.getElementById('widget'),
+      document.getElementById('widget-header'),
+      manager
+    );
+
+    shell.init();
+    shell.startWith('bubbles');
+  </script>
+</body>
+</html>

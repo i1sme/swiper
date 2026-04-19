@@ -1,0 +1,154 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-widget:   #1e1e2e;
+  --bg-header:   #2a2a3e;
+  --bg-body:     #13131f;
+  --accent:      #a6c8ff;
+  --text:        #cdd6f4;
+  --text-muted:  #6c7086;
+  --radius:      12px;
+  --header-h:    36px;
+}
+
+body {
+  background: #0d0d1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+}
+
+#widget {
+  position: relative;
+  width: 360px;
+  border-radius: var(--radius);
+  background: var(--bg-widget);
+  box-shadow: 0 8px 32px rgba(0,0,0,.6);
+  overflow: hidden;
+  user-select: none;
+}
+
+#widget.minimized #widget-body {
+  display: none;
+}
+
+#widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-h);
+  padding: 0 10px;
+  background: var(--bg-header);
+  cursor: grab;
+}
+
+#widget-header:active { cursor: grabbing; }
+
+#game-label {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  letter-spacing: .03em;
+}
+
+#header-controls {
+  display: flex;
+  gap: 4px;
+}
+
+#header-controls button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s;
+}
+
+#header-controls button:hover {
+  background: rgba(166,200,255,.12);
+  color: var(--accent);
+}
+
+#widget-body {
+  position: relative;
+  line-height: 0;
+}
+
+/* Game Picker overlay */
+#game-picker {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.93);
+  backdrop-filter: blur(10px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 12px;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+#game-picker.hidden { display: none; }
+
+.picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: background .12s, border-color .12s, transform .08s;
+}
+
+.picker-item:hover {
+  background: rgba(166,200,255,0.1);
+  border-color: rgba(166,200,255,0.25);
+  transform: scale(1.05);
+}
+
+.picker-item.active {
+  border-color: var(--accent);
+  background: rgba(166,200,255,0.1);
+}
+
+.picker-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.picker-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+#btn-picker.active {
+  background: rgba(166,200,255,0.15);
+  color: var(--accent);
+}
+
+#game-canvas {
+  display: block;
+  width: 360px;
+  height: 280px;
+}
