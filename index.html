@@ -48,6 +48,7 @@
     import snowGlobeGame      from './games/snowGlobe/index.js';
     import tetrisGame         from './games/tetris/index.js';
     import snakeGame          from './games/snake/index.js';
+    import generatorGame      from './games/generator/index.js';
 
     const canvas  = document.getElementById('game-canvas');
     const manager = new GameManager(canvas);
@@ -72,6 +73,7 @@
     manager.register(snowGlobeGame);
     manager.register(tetrisGame);
     manager.register(snakeGame);
+    manager.register(generatorGame);
 
     const shell = new WidgetShell(
       document.getElementById('widget'),
