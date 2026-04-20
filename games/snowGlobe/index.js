@@ -36,9 +36,103 @@ const snowGlobeGame = {
     this._pmx = this._cx;
     this._pmy = this._cy;
 
-    this._onMove = this._onMove.bind(this);
+    this._userImage = null;
+    this._btnReset  = null;
+
+    this._onMove  = this._onMove.bind(this);
+    this._onPaste = this._onPaste.bind(this);
     canvas.addEventListener('mousemove', this._onMove);
     canvas.addEventListener('touchmove', this._onMove, { passive: true });
+    document.addEventListener('paste', this._onPaste);
+
+    this._controls = this._createControls();
+  },
+
+  _createControls() {
+    const body = this._canvas.parentElement;
+    body.style.position = 'relative';
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:absolute;bottom:10px;right:8px;display:flex;gap:4px;z-index:5;';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    fileInput.addEventListener('change', e => {
+      if (e.target.files[0]) this._loadImage(e.target.files[0]);
+      e.target.value = '';
+    });
+    wrap.appendChild(fileInput);
+    this._fileInput = fileInput;
+
+    const btnStyle = 'background:rgba(0,0,0,0.52);border:1px solid rgba(255,255,255,0.18);' +
+      'border-radius:4px;color:#fff;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1.4;';
+
+    const btnUp = document.createElement('button');
+    btnUp.title = 'Загрузить фото (или вставьте из буфера Ctrl+V)';
+    btnUp.textContent = '🖼️';
+    btnUp.style.cssText = btnStyle;
+    btnUp.addEventListener('click', () => fileInput.click());
+    wrap.appendChild(btnUp);
+
+    const btnReset = document.createElement('button');
+    btnReset.title = 'Вернуть оригинальную сцену';
+    btnReset.textContent = '↩';
+    btnReset.style.cssText = btnStyle + 'display:none;';
+    btnReset.addEventListener('click', () => {
+      this._userImage = null;
+      btnReset.style.display = 'none';
+    });
+    wrap.appendChild(btnReset);
+    this._btnReset = btnReset;
+
+    body.appendChild(wrap);
+    return wrap;
+  },
+
+  _loadImage(file) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      this._userImage = img;
+      URL.revokeObjectURL(url);
+      if (this._btnReset) this._btnReset.style.display = '';
+    };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+  },
+
+  _onPaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        this._loadImage(item.getAsFile());
+        break;
+      }
+    }
+  },
+
+  _drawUserImage(ctx, cx, cy, gR) {
+    const img = this._userImage;
+    const iW  = img.naturalWidth, iH = img.naturalHeight;
+    const d   = gR * 2;
+    const sc  = Math.max(d / iW, d / iH);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, gR - 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, cx - iW * sc / 2, cy - iH * sc / 2, iW * sc, iH * sc);
+    // Edge vignette so edges merge with the globe glass
+    const vig = ctx.createRadialGradient(cx, cy, gR * 0.38, cx, cy, gR);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,4,20,0.54)');
+    ctx.fillStyle = vig;
+    ctx.beginPath();
+    ctx.arc(cx, cy, gR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   },
 
   _pt(cx, cy) {
@@ -147,6 +241,10 @@ const snowGlobeGame = {
   },
 
   _drawScene(ctx, cx, cy, gR) {
+    if (this._userImage) {
+      this._drawUserImage(ctx, cx, cy, gR);
+      return;
+    }
     const groundY = cy + gR * 0.62;
 
     // Snow ground
@@ -202,6 +300,9 @@ const snowGlobeGame = {
   destroy() {
     this._canvas.removeEventListener('mousemove', this._onMove);
     this._canvas.removeEventListener('touchmove', this._onMove);
+    document.removeEventListener('paste', this._onPaste);
+    if (this._controls) { this._controls.remove(); this._controls = null; }
+    this._userImage = null;
   },
 };
 

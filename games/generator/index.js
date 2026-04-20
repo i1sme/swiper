@@ -5,8 +5,8 @@ const GEN_CX     = 88;
 const GEN_CY     = 108;
 const CRANK_R    = 40;
 const HANDLE_ORB = 32;
-const MAX_OMEGA  = Math.PI * 5;   // ~2.5 об/с = 100% мощность
-const OMEGA_DECAY = 0.80;         // остаточный коэф. в секунду (EXP decay)
+const MAX_OMEGA  = Math.PI * 9;   // ~4.5 об/с = 100% мощность (нужно реально стараться)
+const OMEGA_DECAY = 0.72;         // остаточный коэф. в секунду — быстрее падает без кручения
 
 // 7-сегментный шрифт: порядок сегментов a,b,c,d,e,f,g
 const SEG = [
@@ -89,6 +89,15 @@ const generatorGame = {
     this._bgOff    = 0;
     this._sparks   = [];
     this._hint     = true;
+
+    const starRx = Math.floor(this._W / 2);
+    const starRw = Math.floor(this._W / 2);
+    const starGY = this._H - 50;
+    this._stars = Array.from({ length: 22 }, (_, i) => ({
+      x: starRx + ((i * 41 + 17) % starRw),
+      y: 5 + ((i * 29 + 13) % Math.floor(starGY * 0.44)),
+      r: 0.5 + (i % 3) * 0.4,
+    }));
 
     this._onDown  = this._onDown.bind(this);
     this._onMove  = this._onMove.bind(this);
@@ -289,7 +298,7 @@ const generatorGame = {
     ctx.restore();
 
     // Segmented display — watts
-    const watts = p * 1200;
+    const watts = p * 9999;
     drawDisplay(ctx, GEN_CX - 38, 176, watts, 4, 14, 24, 3, 'W');
 
     // Bulb
@@ -422,7 +431,7 @@ const generatorGame = {
     ctx.restore();
 
     // Speed display — km/h
-    drawDisplay(ctx, rx + rw - 70, H - 28, p * 250, 3, 10, 18, 2, 'km/h');
+    drawDisplay(ctx, rx + rw - 74, H - 28, p * 350, 3, 10, 18, 2, 'km/h');
 
     ctx.restore();
   },
@@ -430,7 +439,58 @@ const generatorGame = {
   _drawBackground(ctx, p, rx, rw, H) {
     const groundY = H - 50;
 
-    // Discrete elements fade out as speed increases
+    // Moon
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, (1 - p * 1.6) * 0.85);
+    ctx.fillStyle = '#f0e8c0';
+    ctx.shadowColor = '#f0e8c0';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(rx + rw * 0.18, H * 0.09, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Stars — visible dots at low speed, horizontal streaks at high speed
+    ctx.save();
+    for (const s of this._stars) {
+      if (p < 0.55) {
+        ctx.globalAlpha = (1 - p * 1.6) * 0.75;
+        ctx.fillStyle = '#d0dcff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p < 0.88) {
+        const streakLen = (p - 0.5) * rw * 0.65;
+        ctx.globalAlpha = (1 - p) * 0.55;
+        ctx.fillStyle = '#c8d4ff';
+        ctx.fillRect(s.x - streakLen, s.y - 0.5, streakLen, 1);
+      }
+    }
+    ctx.restore();
+
+    // Mountain silhouette — fades as speed increases
+    const mountA = Math.max(0, 1 - p * 1.25);
+    if (mountA > 0.01) {
+      ctx.save();
+      ctx.globalAlpha = mountA * 0.55;
+      ctx.fillStyle = '#182030';
+      ctx.beginPath();
+      ctx.moveTo(rx,              groundY * 0.44);
+      ctx.lineTo(rx + rw * 0.10, groundY * 0.20);
+      ctx.lineTo(rx + rw * 0.22, groundY * 0.34);
+      ctx.lineTo(rx + rw * 0.38, groundY * 0.13);
+      ctx.lineTo(rx + rw * 0.52, groundY * 0.30);
+      ctx.lineTo(rx + rw * 0.66, groundY * 0.17);
+      ctx.lineTo(rx + rw * 0.80, groundY * 0.28);
+      ctx.lineTo(rx + rw,        groundY * 0.42);
+      ctx.lineTo(rx + rw,        groundY);
+      ctx.lineTo(rx,             groundY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Discrete elements: poles + trees — fade as speed increases
     const elemA = Math.max(0, 1 - p * 1.3);
     if (elemA > 0.02) {
       const spacing = 42;
@@ -439,10 +499,8 @@ const generatorGame = {
       ctx.globalAlpha = elemA;
       let idx = 0;
       for (let x = rx - off; x < rx + rw + spacing; x += spacing, idx++) {
-        // Power pole
         ctx.fillStyle = 'rgba(50,40,30,0.75)';
         ctx.fillRect(x + 4, groundY * 0.28, 3, groundY * 0.72);
-        // Alternating tree silhouettes
         if (idx % 2 === 0) {
           ctx.fillStyle = 'rgba(18,38,22,0.8)';
           ctx.beginPath();
@@ -456,16 +514,15 @@ const generatorGame = {
       ctx.restore();
     }
 
-    // Speed streaks (motion blur) — ramp up from p=0.5
+    // Speed streaks (motion blur) — ramp up from p=0.45
     if (p > 0.45) {
       const streakA = Math.min(1, (p - 0.45) * 2.2);
       ctx.save();
-      // Horizontal blur bands
       for (let y = 12; y < groundY; y += 4) {
-        const len = (30 + y * 0.6) * streakA;
+        const len = (40 + y * 0.75) * streakA;
         const hue = 200 + (y % 55);
         const lt  = 30 + y / groundY * 35;
-        ctx.fillStyle = `hsla(${hue},40%,${Math.round(lt)}%,${(streakA * 0.07).toFixed(2)})`;
+        ctx.fillStyle = `hsla(${hue},45%,${Math.round(lt)}%,${(streakA * 0.09).toFixed(2)})`;
         ctx.fillRect(rx + rw - len - 5, y, len, 1.5);
       }
       ctx.restore();

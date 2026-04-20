@@ -85,16 +85,18 @@ const newtonCradleGame = {
       if (Math.hypot(b.x - pt.x, b.y - pt.y) < BALL_R + 12) {
         const isLeft = i < Math.floor(N / 2) ||
           (i === Math.floor(N / 2) && pt.x < this._pivots[Math.floor(N / 2)]);
+        const curTheta = i < this._lN ? this._lTheta
+          : (i >= N - this._rN && this._rN > 0 ? this._rTheta : 0);
         if (isLeft) {
           this._lN = i + 1; this._rN = 0;
-          this._lTheta = -0.01; this._lOmega = 0;
-          this._rTheta = 0;    this._rOmega = 0;
-          this._drag   = { side: 'left' };
+          this._lTheta = Math.min(-0.01, curTheta); this._lOmega = 0;
+          this._rTheta = 0; this._rOmega = 0;
+          this._drag = { side: 'left' };
         } else {
           this._rN = N - i; this._lN = 0;
-          this._rTheta = 0.01; this._rOmega = 0;
-          this._lTheta = 0;    this._lOmega = 0;
-          this._drag   = { side: 'right' };
+          this._rTheta = Math.max(0.01, curTheta); this._rOmega = 0;
+          this._lTheta = 0; this._lOmega = 0;
+          this._drag = { side: 'right' };
         }
         break;
       }
@@ -108,17 +110,16 @@ const newtonCradleGame = {
       e.touches ? e.touches[0].clientY : e.clientY
     );
     if (this._drag.side === 'left') {
-      const px = this._pivots[0];
+      const px = this._pivots[this._lN - 1];
       const dx = pt.x - px, dy = pt.y - PIVOT_Y;
       const angle = Math.atan2(dx, dy);
-      // Если мышь переходит за вертикаль сверху (angle >= 0) — держим на MAX_THETA
-      this._lTheta = angle < 0 ? Math.max(-MAX_THETA, angle) : -MAX_THETA;
+      this._lTheta = Math.max(-MAX_THETA, Math.min(-0.01, angle));
       this._lOmega = 0;
     } else {
-      const px = this._pivots[N - 1];
+      const px = this._pivots[N - this._rN];
       const dx = pt.x - px, dy = pt.y - PIVOT_Y;
       const angle = Math.atan2(dx, dy);
-      this._rTheta = angle > 0 ? Math.min(MAX_THETA, angle) : MAX_THETA;
+      this._rTheta = Math.min(MAX_THETA, Math.max(0.01, angle));
       this._rOmega = 0;
     }
   },
