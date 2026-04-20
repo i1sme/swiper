@@ -46,6 +46,8 @@
     import aquariumGame       from './games/aquarium/index.js';
     import leavesGame         from './games/leaves/index.js';
     import snowGlobeGame      from './games/snowGlobe/index.js';
+    import tetrisGame         from './games/tetris/index.js';
+    import snakeGame          from './games/snake/index.js';
 
     const canvas  = document.getElementById('game-canvas');
     const manager = new GameManager(canvas);
@@ -68,6 +70,8 @@
     manager.register(aquariumGame);
     manager.register(leavesGame);
     manager.register(snowGlobeGame);
+    manager.register(tetrisGame);
+    manager.register(snakeGame);
 
     const shell = new WidgetShell(
       document.getElementById('widget'),
