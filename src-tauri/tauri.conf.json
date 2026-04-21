@@ -15,7 +15,8 @@
       "all": false,
       "window": {
         "startDragging": true,
-        "hide": true
+        "hide": true,
+        "setSize": true
       }
     },
     "bundle": {

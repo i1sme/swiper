@@ -129,7 +129,15 @@ export class WidgetShell {
   _setupButtons() {
     document.getElementById('btn-minimize').addEventListener('click', () => {
       if (window.__TAURI__) {
-        window.__TAURI__.window.getCurrent().hide();
+        const win = window.__TAURI__.window.getCurrent();
+        const isNowMin = this.widget.classList.toggle('minimized');
+        if (isNowMin) {
+          this._expandedH = window.innerHeight;
+          win.setSize(new window.__TAURI__.window.LogicalSize(window.innerWidth, 36));
+        } else {
+          win.setSize(new window.__TAURI__.window.LogicalSize(window.innerWidth, this._expandedH ?? 316));
+        }
+        if (isNowMin && this._pickerOpen) this._closePicker();
         return;
       }
       this.widget.classList.toggle('minimized');
