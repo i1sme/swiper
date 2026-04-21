@@ -4,7 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZenWidget</title>
-  <script>if (window.__TAURI__) document.documentElement.classList.add('tauri');</script>
+  <script>
+    if (window.__TAURI__) {
+      const h = document.documentElement;
+      h.classList.add('tauri');
+      const ua = navigator.userAgent;
+      if (ua.includes('Mac'))     h.classList.add('macos');
+      else if (ua.includes('Win')) h.classList.add('windows');
+    }
+  </script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>

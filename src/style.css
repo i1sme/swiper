@@ -175,10 +175,13 @@ html.tauri #widget-body {
   height: calc(100vh - var(--header-h));
 }
 
-/* Отступ под нативные traffic lights (●●●) — ~76px слева */
 html.tauri #widget-header {
-  padding-left: 76px;
   cursor: grab;
+}
+
+/* Отступ под traffic lights только на macOS */
+html.tauri.macos #widget-header {
+  padding-left: 76px;
 }
 
 html.tauri #widget-header:active {
