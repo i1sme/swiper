@@ -17,7 +17,7 @@ export class WidgetShell {
     this._setupDrag();
     this._buildPickerOverlay();
     this._setupButtons();
-    this.widget.style.position = 'relative';
+    if (!window.__TAURI__) this.widget.style.position = 'relative';
   }
 
   // Устанавливает начальную игру (вызывается из index.html вместо manager.switchTo)
@@ -32,6 +32,7 @@ export class WidgetShell {
   }
 
   _onMouseDown(e) {
+    if (window.__TAURI__) return;
     if (e.target.closest('button')) return;
     this._drag.active = true;
     this._drag.startX = e.clientX;
