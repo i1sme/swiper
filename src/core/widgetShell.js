@@ -32,8 +32,11 @@ export class WidgetShell {
   }
 
   _onMouseDown(e) {
-    if (window.__TAURI__) return;
     if (e.target.closest('button')) return;
+    if (window.__TAURI__) {
+      window.__TAURI__.window.getCurrent().startDragging();
+      return;
+    }
     this._drag.active = true;
     this._drag.startX = e.clientX;
     this._drag.startY = e.clientY;
