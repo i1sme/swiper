@@ -155,7 +155,7 @@ body {
   background: var(--bg-body);
 }
 
-/* ── Tauri frameless-window mode ── */
+/* ── Tauri native-window mode ── */
 html.tauri body {
   background: transparent;
   min-height: unset;
@@ -169,14 +169,15 @@ html.tauri #widget {
   margin: 0;
   border-radius: var(--radius);
   box-shadow: none;
-  outline: 1px solid rgba(255,255,255,0.07);
 }
 
 html.tauri #widget-body {
   height: calc(100vh - var(--header-h));
 }
 
+/* Отступ под нативные traffic lights (●●●) — ~76px слева */
 html.tauri #widget-header {
+  padding-left: 76px;
   cursor: grab;
 }
 
