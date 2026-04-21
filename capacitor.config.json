@@ -1,7 +1,7 @@
 {
   "appId": "com.zenwidget.app",
   "appName": "ZenWidget",
-  "webDir": ".",
+  "webDir": "src",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"
