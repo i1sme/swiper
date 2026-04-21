@@ -85,6 +85,7 @@ body {
 #widget-body {
   position: relative;
   line-height: 0;
+  height: 280px;
 }
 
 /* Game Picker overlay */
@@ -149,6 +150,35 @@ body {
 
 #game-canvas {
   display: block;
-  width: 360px;
-  height: 280px;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Tauri frameless-window mode ── */
+html.tauri body {
+  background: transparent;
+  min-height: unset;
+  display: block;
+}
+
+html.tauri #widget {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  border-radius: var(--radius);
+}
+
+html.tauri #widget-body {
+  height: calc(100vh - var(--header-h));
+}
+
+html.tauri #widget-header {
+  -webkit-app-region: drag;
+  cursor: default;
+}
+
+html.tauri #widget-header button,
+html.tauri #widget-header #header-controls {
+  -webkit-app-region: no-drag;
 }

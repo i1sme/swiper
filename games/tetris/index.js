@@ -2,9 +2,6 @@
 
 const TC_COLS  = 10;
 const TC_ROWS  = 20;
-const TC_SZ    = 14;    // px per cell
-const TC_OX    = Math.round((360 - TC_COLS * TC_SZ) / 2); // 110
-const TC_OY    = 0;
 const FALL_MS  = 700;   // мс на одну ступеньку падения
 const SOFT_MS  = 50;    // мс при удержании ↓
 
@@ -42,6 +39,17 @@ const tetrisGame = {
   init(canvas, ctx) {
     this._canvas   = canvas;
     this._ctx      = ctx;
+    this._W        = canvas.width;
+    this._H        = canvas.height;
+
+    // Cell size fits the board within canvas in both dimensions
+    this._sz = Math.min(
+      Math.floor(this._H / TC_ROWS),
+      Math.floor(this._W / TC_COLS)
+    );
+    this._ox = Math.round((this._W - TC_COLS * this._sz) / 2);
+    this._oy = Math.round((this._H - TC_ROWS * this._sz) / 2);
+
     this._softDrop = false;
     this._fallAcc  = 0;
 
@@ -99,10 +107,10 @@ const tetrisGame = {
   _onT(e) {
     const t  = e.changedTouches[0];
     const rc = this._canvas.getBoundingClientRect();
-    const cx = (t.clientX - rc.left) * (360 / rc.width);
-    if      (cx < 120) this._move(-1);
-    else if (cx > 240) this._move(1);
-    else               this._rotate();
+    const cx = (t.clientX - rc.left) * (this._W / rc.width);
+    if      (cx < this._W / 3)       this._move(-1);
+    else if (cx > this._W * 2 / 3)   this._move(1);
+    else                              this._rotate();
   },
 
   _move(dx) {
@@ -194,28 +202,30 @@ const tetrisGame = {
 
   _draw() {
     const ctx = this._ctx;
+    const W = this._W, H = this._H;
+    const ox = this._ox, oy = this._oy, sz = this._sz;
 
     // Background
     ctx.fillStyle = '#0d1117';
-    ctx.fillRect(0, 0, 360, 280);
+    ctx.fillRect(0, 0, W, H);
 
     // Board background
     ctx.fillStyle = '#0f161f';
-    ctx.fillRect(TC_OX, TC_OY, TC_COLS * TC_SZ, TC_ROWS * TC_SZ);
+    ctx.fillRect(ox, oy, TC_COLS * sz, TC_ROWS * sz);
 
     // Subtle grid lines
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth   = 0.5;
     for (let c = 0; c <= TC_COLS; c++) {
       ctx.beginPath();
-      ctx.moveTo(TC_OX + c * TC_SZ, TC_OY);
-      ctx.lineTo(TC_OX + c * TC_SZ, TC_OY + TC_ROWS * TC_SZ);
+      ctx.moveTo(ox + c * sz, oy);
+      ctx.lineTo(ox + c * sz, oy + TC_ROWS * sz);
       ctx.stroke();
     }
     for (let r = 0; r <= TC_ROWS; r++) {
       ctx.beginPath();
-      ctx.moveTo(TC_OX,                TC_OY + r * TC_SZ);
-      ctx.lineTo(TC_OX + TC_COLS * TC_SZ, TC_OY + r * TC_SZ);
+      ctx.moveTo(ox,               oy + r * sz);
+      ctx.lineTo(ox + TC_COLS * sz, oy + r * sz);
       ctx.stroke();
     }
 
@@ -253,13 +263,13 @@ const tetrisGame = {
     // Board border
     ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.lineWidth   = 1;
-    ctx.strokeRect(TC_OX, TC_OY, TC_COLS * TC_SZ, TC_ROWS * TC_SZ);
+    ctx.strokeRect(ox, oy, TC_COLS * sz, TC_ROWS * sz);
   },
 
   _cell(ctx, cx, cy, color) {
-    const x = TC_OX + cx * TC_SZ + 1;
-    const y = TC_OY + cy * TC_SZ + 1;
-    const s = TC_SZ - 2;
+    const x = this._ox + cx * this._sz + 1;
+    const y = this._oy + cy * this._sz + 1;
+    const s = this._sz - 2;
     ctx.fillStyle = color;
     ctx.fillRect(x, y, s, s);
     // top/left highlight

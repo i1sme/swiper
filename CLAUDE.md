@@ -59,8 +59,8 @@
 
 | Платформа | Инструмент | Статус |
 |---|---|---|
-| Mac, Windows | Tauri (Rust + WebView) | 💡 следующий этап |
-| iOS, Android | Capacitor (WebView wrapper) | 💡 следующий этап |
+| Mac, Windows | Tauri (Rust + WebView) | 🚧 структура создана, требует `cargo tauri build` |
+| iOS, Android | Capacitor (WebView wrapper) | 🚧 конфиг создан, требует `npm install && cap sync` |
 
 **Почему именно так:**
 - Tauri — самый лёгкий десктопный шелл (~5 MB), не Electron. Тот же JS/Canvas внутри.
@@ -69,11 +69,11 @@
 
 **Что нужно доработать в коде перед упаковкой в шелл:**
 
-- **Адаптивный canvas** — убрать fallback `360×280`, canvas должен заполнять весь экран и корректно реагировать на `resize` и поворот устройства
-- **Touch-события** — `handleInput` упомянут, но каждая игра должна полноценно обрабатывать `touchstart / touchmove / touchend` (не только мышь)
-- **Нет фиксированных px-размеров** — все размеры объектов должны вычисляться от `canvas.width / canvas.height`, не hardcoded
-- **Виджет поверх окон (десктоп)** — настраивается в `tauri.conf.json`: `alwaysOnTop: true`, прозрачный фон, без рамки
-- **Нет хранилища** — игры не должны требовать `localStorage` или файловой системы (текущая архитектура это уже соблюдает)
+- ~~**Адаптивный canvas**~~ ✅ ResizeObserver + `switchTo()` по дебаунсу, canvas заполняет контейнер
+- ~~**Нет фиксированных px-размеров**~~ ✅ Tetris и Snake переведены на вычисляемые размеры от `canvas.width/height`
+- **Touch-события** — каждая игра должна полноценно обрабатывать `touchstart / touchmove / touchend` (все текущие игры уже это делают)
+- ~~**Виджет поверх окон (десктоп)**~~ ✅ `tauri.conf.json`: `alwaysOnTop: true`, `decorations: false`, `transparent: true`; CSS `.tauri` режим
+- **Нет хранилища** — ✅ игры не используют `localStorage` (архитектура уже соблюдает)
 
 ---
 

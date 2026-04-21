@@ -40,6 +40,7 @@
     import newtonCradleGame   from './games/newtonCradle/index.js';
     import metronomeGame      from './games/metronome/index.js';
 
+    import pendulumGame        from './games/pendulum/index.js';
     import lavaLampGame       from './games/lavaLamp/index.js';
     import auroraGame         from './games/aurora/index.js';
     import inkGame            from './games/ink/index.js';
@@ -60,6 +61,7 @@
     manager.register(waterRippleGame);
     manager.register(firefliesGame);
 
+    manager.register(pendulumGame);
     manager.register(campfireGame);
     manager.register(holoPaperGame);
     manager.register(newtonCradleGame);
@@ -83,6 +85,8 @@
 
     shell.init();
     shell.startWith('bubbles');
+
+    if (window.__TAURI__) document.documentElement.classList.add('tauri');
   </script>
 </body>
 </html>

@@ -10,9 +10,10 @@ export class GameManager {
     this.games   = new Map();
     this.current = null;
 
-    this._rafId      = null;
-    this._lastTime   = 0;
-    this._isVisible  = true;
+    this._rafId       = null;
+    this._lastTime    = 0;
+    this._isVisible   = true;
+    this._resizeTimer = null;
 
     this._onVisibility = () => {
       this._isVisible = !document.hidden;
@@ -24,13 +25,23 @@ export class GameManager {
     };
     document.addEventListener('visibilitychange', this._onVisibility);
 
+    // Reinitialize active game when canvas container is resized
+    this._resizeObs = new ResizeObserver(() => {
+      clearTimeout(this._resizeTimer);
+      this._resizeTimer = setTimeout(() => {
+        const name = this.current?.name;
+        if (name) this.switchTo(name);
+      }, 120);
+    });
+    this._resizeObs.observe(canvas);
+
     this._resizeCanvas();
   }
 
   _resizeCanvas() {
     const rect = this.canvas.getBoundingClientRect();
-    this.canvas.width  = rect.width  || 360;
-    this.canvas.height = rect.height || 280;
+    if (rect.width  > 0) this.canvas.width  = Math.round(rect.width);
+    if (rect.height > 0) this.canvas.height = Math.round(rect.height);
   }
 
   register(game) {
@@ -79,6 +90,8 @@ export class GameManager {
   destroy() {
     this._stopLoop();
     this.current?.destroy();
+    this._resizeObs.disconnect();
+    clearTimeout(this._resizeTimer);
     document.removeEventListener('visibilitychange', this._onVisibility);
   }
 }

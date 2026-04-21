@@ -1,11 +1,8 @@
 // Змейка — ставишь еду кликом, змейка сама ползёт через BFS.
 // Проходит сквозь стены. Долго не ест — постепенно усыхает.
 
-const SC_CELL    = 18;
 const SC_COLS    = 20;
 const SC_ROWS    = 15;
-const SC_OX      = 0;
-const SC_OY      = 5;     // (280 - 15*18) / 2 = 5
 const STEP_MS    = 320;   // мс на один шаг
 const HUNGER_MAX = 12000; // мс до начала усыхания
 const SHRINK_MS  = 2000;  // мс между потерей сегмента
@@ -23,6 +20,15 @@ const snakeGame = {
     this._ctx          = ctx;
     this._W            = canvas.width;
     this._H            = canvas.height;
+
+    // Adaptive cell size: fit grid in canvas, keep cells square
+    this._cell = Math.min(
+      Math.floor(this._W / SC_COLS),
+      Math.floor(this._H / SC_ROWS)
+    );
+    this._ox = Math.round((this._W - SC_COLS * this._cell) / 2);
+    this._oy = Math.round((this._H - SC_ROWS * this._cell) / 2);
+
     this._stepAcc      = 0;
     this._animMs       = 0;
     this._hungerMs     = 0;
@@ -145,8 +151,8 @@ const snakeGame = {
     const r   = this._canvas.getBoundingClientRect();
     const cx  = (src.clientX - r.left) * (this._W / r.width);
     const cy  = (src.clientY - r.top)  * (this._H / r.height);
-    const gc  = Math.floor(cx / SC_CELL);
-    const gr  = Math.floor((cy - SC_OY) / SC_CELL);
+    const gc  = Math.floor((cx - this._ox) / this._cell);
+    const gr  = Math.floor((cy - this._oy) / this._cell);
     if (gc < 0 || gc >= SC_COLS || gr < 0 || gr >= SC_ROWS) return;
 
     const bodySet = new Set(this._body.map(([x, y]) => this._key(x, y)));
@@ -183,8 +189,9 @@ const snakeGame = {
   },
 
   _draw() {
-    const ctx = this._ctx;
-    const W   = this._W, H = this._H;
+    const ctx  = this._ctx;
+    const W    = this._W, H = this._H;
+    const ox   = this._ox, oy = this._oy, cell = this._cell;
 
     // Background
     ctx.fillStyle = '#0e1a12';
@@ -195,23 +202,23 @@ const snakeGame = {
     ctx.lineWidth   = 0.5;
     for (let c = 0; c <= SC_COLS; c++) {
       ctx.beginPath();
-      ctx.moveTo(SC_OX + c * SC_CELL, SC_OY);
-      ctx.lineTo(SC_OX + c * SC_CELL, SC_OY + SC_ROWS * SC_CELL);
+      ctx.moveTo(ox + c * cell, oy);
+      ctx.lineTo(ox + c * cell, oy + SC_ROWS * cell);
       ctx.stroke();
     }
     for (let r = 0; r <= SC_ROWS; r++) {
       ctx.beginPath();
-      ctx.moveTo(SC_OX,                    SC_OY + r * SC_CELL);
-      ctx.lineTo(SC_OX + SC_COLS * SC_CELL, SC_OY + r * SC_CELL);
+      ctx.moveTo(ox,                  oy + r * cell);
+      ctx.lineTo(ox + SC_COLS * cell, oy + r * cell);
       ctx.stroke();
     }
 
     // Food — pulsing glow
     if (this._food) {
-      const fx    = SC_OX + this._food[0] * SC_CELL + SC_CELL / 2;
-      const fy    = SC_OY + this._food[1] * SC_CELL + SC_CELL / 2;
+      const fx    = ox + this._food[0] * cell + cell / 2;
+      const fy    = oy + this._food[1] * cell + cell / 2;
       const pulse = 0.5 + 0.5 * Math.sin(this._animMs * 0.004);
-      const fr    = SC_CELL * 0.28 + pulse * 2;
+      const fr    = cell * 0.28 + pulse * 2;
       ctx.save();
       ctx.shadowColor = '#f0a050';
       ctx.shadowBlur  = 10 + pulse * 6;
@@ -229,9 +236,9 @@ const snakeGame = {
       const t   = i / Math.max(len - 1, 1); // 0=head, 1=tail
       const lh  = 58 - t * 32;
       const pad = 2 + t;
-      const x   = SC_OX + cx * SC_CELL + pad;
-      const y   = SC_OY + cy * SC_CELL + pad;
-      const s   = SC_CELL - pad * 2;
+      const x   = ox + cx * cell + pad;
+      const y   = oy + cy * cell + pad;
+      const s   = cell - pad * 2;
 
       ctx.fillStyle = `hsl(148,60%,${Math.round(lh)}%)`;
       ctx.beginPath();
@@ -242,10 +249,9 @@ const snakeGame = {
     // Head eyes
     if (this._body.length > 0) {
       const [hx, hy] = this._body[0];
-      const bx  = SC_OX + hx * SC_CELL + SC_CELL / 2;
-      const by  = SC_OY + hy * SC_CELL + SC_CELL / 2;
+      const bx  = ox + hx * cell + cell / 2;
+      const by  = oy + hy * cell + cell / 2;
       const [dx, dy] = this._dir;
-      // Perpendicular offset for two eyes
       const px2 = -dy, py2 = dx;
       ctx.fillStyle = '#0e1a12';
       for (const side of [-1, 1]) {

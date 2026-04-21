@@ -124,6 +124,10 @@ export class WidgetShell {
 
   _setupButtons() {
     document.getElementById('btn-minimize').addEventListener('click', () => {
+      if (window.__TAURI__) {
+        window.__TAURI__.window.getCurrent().hide();
+        return;
+      }
       this.widget.classList.toggle('minimized');
       if (this._pickerOpen) this._closePicker();
     });

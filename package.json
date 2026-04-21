@@ -1,0 +1,21 @@
+{
+  "name": "zen-widget",
+  "version": "0.1.0",
+  "description": "Relaxing mini-games floating widget",
+  "private": true,
+  "scripts": {
+    "tauri": "tauri",
+    "cap": "cap",
+    "cap:ios": "cap sync ios && cap open ios",
+    "cap:android": "cap sync android && cap open android"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6",
+    "@capacitor/core": "^6",
+    "@capacitor/ios": "^6",
+    "@capacitor/cli": "^6"
+  }
+}
