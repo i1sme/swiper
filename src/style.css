@@ -148,6 +148,14 @@ body {
   color: var(--accent);
 }
 
+#btn-mute {
+  font-size: 13px;
+}
+
+#btn-mute.muted {
+  opacity: 0.55;
+}
+
 #game-canvas {
   display: block;
   width: 100%;

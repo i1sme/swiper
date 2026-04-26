@@ -1,6 +1,8 @@
 // Колыбель Ньютона — 5 шаров на нитях, упругий удар, передача импульса.
 // Тяни любой шарик мышью/пальцем, отпусти — наблюдай.
 
+import audio from '../../core/audio.js';
+
 const N        = 5;
 const BALL_R   = 13;
 const L_STR    = 95;
@@ -221,6 +223,7 @@ const newtonCradleGame = {
       // Передача импульса: левая группа пересекает центр →
       if (this._lN > 0 && this._lOmega > 0 && this._prevLT < 0 && this._lTheta >= 0) {
         const n = this._lN, omega = this._lOmega;
+        audio.clack(Math.min(1, Math.abs(omega) / 3));
         this._lN = 0; this._lTheta = 0; this._lOmega = 0;
         if (this._rN > 0 && this._rOmega < 0) {
           const tmpN = this._rN, tmpO = this._rOmega;
@@ -233,6 +236,7 @@ const newtonCradleGame = {
       // Передача импульса: правая группа пересекает центр ←
       if (this._rN > 0 && this._rOmega < 0 && this._prevRT > 0 && this._rTheta <= 0) {
         const n = this._rN, omega = this._rOmega;
+        audio.clack(Math.min(1, Math.abs(omega) / 3));
         this._rN = 0; this._rTheta = 0; this._rOmega = 0;
         if (this._lN > 0 && this._lOmega > 0) {
           const tmpN = this._lN, tmpO = this._lOmega;

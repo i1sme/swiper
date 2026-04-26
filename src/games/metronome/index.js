@@ -1,6 +1,8 @@
 // Метроном — механический, как настоящий. Тяни грузик на стержне:
 // вверх → медленнее, вниз → быстрее.
 
+import audio from '../../core/audio.js';
+
 const BPM_MIN  = 40;
 const BPM_MAX  = 208;
 const AMP_TGT  = 0.44;  // целевая амплитуда маятника (рад)
@@ -239,6 +241,9 @@ const metronomeGame = {
       const newSign = Math.sign(this._theta);
       if (prevSign !== 0 && newSign !== 0 && newSign !== prevSign) {
         this._tickFlash = 0.14;
+        // Тик/так старых напольных часов: смещаем все три полосы спектра
+        if (newSign > 0) audio.mechTick(6800, 1400, 190);
+        else             audio.mechTick(5400,  920, 140);
       }
     }
     if (this._tickFlash > 0) this._tickFlash -= dtSec;

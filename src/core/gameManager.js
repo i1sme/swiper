@@ -1,3 +1,5 @@
+import audio from './audio.js';
+
 const TARGET_FPS_ACTIVE = 30;
 const TARGET_FPS_BACKGROUND = 10;
 const FRAME_MS_ACTIVE = 1000 / TARGET_FPS_ACTIVE;
@@ -18,8 +20,10 @@ export class GameManager {
     this._onVisibility = () => {
       this._isVisible = !document.hidden;
       if (this._isVisible) {
+        audio.resume();
         this.current?.resume?.();
       } else {
+        audio.suspend();
         this.current?.pause?.();
       }
     };

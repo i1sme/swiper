@@ -1,6 +1,8 @@
 // Генератор — крути ручку мышью/пальцем, вырабатывай ток.
 // Мощность → лампочка (левая) + электровоз (правая панель).
 
+import audio from '../../core/audio.js';
+
 const GEN_CX     = 88;
 const GEN_CY     = 108;
 const CRANK_R    = 40;
@@ -111,6 +113,8 @@ const generatorGame = {
     canvas.addEventListener('touchstart', this._onTouch, { passive: true });
     canvas.addEventListener('touchmove',  this._onTouch, { passive: true });
     canvas.addEventListener('touchend',   this._onUp);
+
+    this._motor = audio.motor();
   },
 
   _pt(cx, cy) {
@@ -171,6 +175,8 @@ const generatorGame = {
     if (!this._dragging) this._omega *= Math.pow(OMEGA_DECAY, s);
     this._angle += this._omega * s;
     this._power  = Math.min(1, Math.abs(this._omega) / MAX_OMEGA);
+
+    this._motor?.setSpeed(this._power);
 
     this._bgOff = (this._bgOff + this._power * 260 * s) % 260;
 
@@ -642,6 +648,8 @@ const generatorGame = {
     this._canvas.removeEventListener('touchstart', this._onTouch);
     this._canvas.removeEventListener('touchmove',  this._onTouch);
     this._canvas.removeEventListener('touchend',   this._onUp);
+    this._motor?.stop();
+    this._motor = null;
   },
 };
 

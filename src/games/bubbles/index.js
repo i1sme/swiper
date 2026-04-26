@@ -1,3 +1,5 @@
+import audio from '../../core/audio.js';
+
 const COLS = 9;
 const ROWS = 7;
 const BUBBLE_R = 16;
@@ -112,6 +114,7 @@ const bubblesGame = {
     b.popT   = 0;
     const c = this._cellCenter(idx);
     this._spawnPop(c.x, c.y);
+    audio.pop(0.6 + Math.random() * 0.8);
 
     if (this._grid.every(b => b.popped)) {
       this._refillTimer = REFILL_DELAY;

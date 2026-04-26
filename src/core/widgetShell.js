@@ -1,3 +1,5 @@
+import audio from './audio.js';
+
 export class WidgetShell {
   constructor(widget, header, manager) {
     this.widget   = widget;
@@ -198,6 +200,16 @@ export class WidgetShell {
     document.getElementById('btn-picker').addEventListener('click', () => {
       this._togglePicker();
     });
+
+    const muteBtn = document.getElementById('btn-mute');
+    if (muteBtn) {
+      muteBtn.addEventListener('click', () => {
+        const next = !audio.isMuted();
+        audio.setMuted(next);
+        muteBtn.textContent = next ? '🔇' : '🔊';
+        muteBtn.classList.toggle('muted', next);
+      });
+    }
   }
 
   _updateLabel() {

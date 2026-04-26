@@ -1,5 +1,7 @@
 // Sand — классический falling-sand: рисуешь мышью, песчинки сыплются вниз
 
+import audio from '../../core/audio.js';
+
 let CELL = 4;            // пикселей на клетку (адаптивно, перевыч. в init)
 let BRUSH_R = 3;         // радиус кисти в клетках (адаптивно)
 const EMPTY  = 0;
@@ -61,6 +63,8 @@ const sandGame = {
     canvas.addEventListener('touchstart',  this._onTouch, { passive: true });
     canvas.addEventListener('touchmove',   this._onTouch, { passive: true });
     canvas.addEventListener('touchend',    this._onUp);
+
+    this._sand = audio.sand();
   },
 
   // --- ввод ---
@@ -77,6 +81,7 @@ const sandGame = {
 
   _onDown(e) {
     this._painting = true;
+    this._sand?.setActive(true);
     const { col, row } = this._clientToGrid(e.clientX, e.clientY);
     this._paint(col, row);
   },
@@ -91,9 +96,9 @@ const sandGame = {
     this._paint(col, row);
   },
 
-  _onUp() { this._painting = false; },
+  _onUp() { this._painting = false; this._sand?.setActive(false); },
 
-  _onLeave() { this._painting = false; this._cursorOn = false; },
+  _onLeave() { this._painting = false; this._cursorOn = false; this._sand?.setActive(false); },
 
   _onContext(e) { e.preventDefault(); this._clearAll(); },
 
@@ -107,6 +112,7 @@ const sandGame = {
   _onTouch(e) {
     const t = e.changedTouches[0];
     this._painting = e.type !== 'touchend';
+    this._sand?.setActive(this._painting);
     const { col, row } = this._clientToGrid(t.clientX, t.clientY);
     if (this._painting) this._paint(col, row);
   },
@@ -222,6 +228,8 @@ const sandGame = {
     this._canvas.removeEventListener('touchstart',  this._onTouch);
     this._canvas.removeEventListener('touchmove',   this._onTouch);
     this._canvas.removeEventListener('touchend',    this._onUp);
+    this._sand?.stop();
+    this._sand = null;
   },
 };
 

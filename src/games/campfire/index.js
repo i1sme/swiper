@@ -1,6 +1,8 @@
 // Костёр — петля вовлечённости: тяни брёвна на кострище, они горят и догорают.
 // Огонь угасает без новых брёвен — нужно поддерживать его живым.
 
+import audio from '../../core/audio.js';
+
 const FIREPIT_R  = 52;   // радиус кострища, px
 const LOG_LEN    = 48;   // полудлина бревна (эллипс)
 const LOG_H      = 8;    // полувысота бревна
@@ -50,6 +52,7 @@ const campfireGame = {
     this._drag     = null; // { log, offsetX, offsetY, fromSlot }
 
     this._pitSprite = this._buildPitSprite();
+    this._fireAudio = audio.fire();
 
     this._onDown  = this._onDown.bind(this);
     this._onMove  = this._onMove.bind(this);
@@ -236,6 +239,12 @@ const campfireGame = {
     // Брёвна на кострище (снизу)
     for (const log of this._pitLogs) {
       this._drawLog(ctx, log, log.health, false);
+    }
+
+    // Звук костра — обновляем интенсивность каждый кадр
+    {
+      const fireI = this._pitLogs.filter(l => l.burning).reduce((s, l) => s + l.health, 0) / 3;
+      this._fireAudio?.setIntensity(fireI);
     }
 
     // Зарево под огнём
@@ -446,6 +455,8 @@ const campfireGame = {
     this._canvas.removeEventListener('touchstart', this._onDown);
     this._canvas.removeEventListener('touchmove',  this._onMove);
     this._canvas.removeEventListener('touchend',   this._onUp);
+    this._fireAudio?.stop();
+    this._fireAudio = null;
   },
 };
 
