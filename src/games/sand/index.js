@@ -1,7 +1,7 @@
 // Sand — классический falling-sand: рисуешь мышью, песчинки сыплются вниз
 
-const CELL = 4;          // пикселей на клетку
-const BRUSH_R = 3;       // радиус кисти в клетках
+let CELL = 4;            // пикселей на клетку (адаптивно, перевыч. в init)
+let BRUSH_R = 3;         // радиус кисти в клетках (адаптивно)
 const EMPTY  = 0;
 const SAND   = 1;
 
@@ -19,6 +19,10 @@ const sandGame = {
   init(canvas, ctx) {
     this._canvas = canvas;
     this._ctx    = ctx;
+
+    // Адаптивный размер клетки: ~80-100 клеток по короткой стороне
+    CELL = Math.max(2, Math.floor(Math.min(canvas.width, canvas.height) / 90));
+    BRUSH_R = Math.max(2, Math.round(12 / CELL));
 
     this._cols = Math.floor(canvas.width  / CELL);
     this._rows = Math.floor(canvas.height / CELL);

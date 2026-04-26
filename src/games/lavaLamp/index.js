@@ -60,6 +60,8 @@ const lavaLampGame = {
 
     this._blobs = Array.from({ length: 9 }, () => makeBlob(this._W, this._H));
 
+    this._poolGrads = this._buildPoolGradients();
+
     this._dragging   = null;
     this._dragTarget = { x: 0, y: 0 };
     this._dragVx     = 0;
@@ -83,6 +85,47 @@ const lavaLampGame = {
       x: (cx - r.left) * (this._canvas.width  / r.width),
       y: (cy - r.top)  * (this._canvas.height / r.height),
     };
+  },
+
+  _buildPoolGradients() {
+    const ctx = this._ctx;
+    const W = this._W, H = this._H;
+    const D = POOL_D, GH = GLOW_H, wA = 7;
+
+    const topBody = ctx.createLinearGradient(0, 0, 0, D);
+    {
+      const [r0, g0, b0] = lavaRGB(1.0);
+      const [r1, g1, b1] = lavaRGB(1 - D / H);
+      topBody.addColorStop(0, `rgb(${r0},${g0},${b0})`);
+      topBody.addColorStop(1, `rgb(${r1},${g1},${b1})`);
+    }
+
+    const topGlow = ctx.createLinearGradient(0, D - wA, 0, D + GH);
+    {
+      const [r, g, b] = lavaRGB(1 - D / H);
+      topGlow.addColorStop(0,              `rgba(${r},${g},${b},0.00)`);
+      topGlow.addColorStop(wA / (wA + GH), `rgba(${r},${g},${b},0.55)`);
+      topGlow.addColorStop(1,              `rgba(${r},${g},${b},0.00)`);
+    }
+
+    const botBody = ctx.createLinearGradient(0, H - D, 0, H);
+    {
+      const [r0, g0, b0] = lavaRGB(D / H);
+      const [r1, g1, b1] = lavaRGB(0.0);
+      botBody.addColorStop(0, `rgb(${r0},${g0},${b0})`);
+      botBody.addColorStop(1, `rgb(${r1},${g1},${b1})`);
+    }
+
+    const bD = H - D;
+    const botGlow = ctx.createLinearGradient(0, bD - GH, 0, bD + wA);
+    {
+      const [r, g, b] = lavaRGB(D / H);
+      botGlow.addColorStop(0,              `rgba(${r},${g},${b},0.00)`);
+      botGlow.addColorStop(GH / (GH + wA), `rgba(${r},${g},${b},0.55)`);
+      botGlow.addColorStop(1,              `rgba(${r},${g},${b},0.00)`);
+    }
+
+    return { topBody, topGlow, botBody, botGlow };
   },
 
   _onDown(e) {
@@ -260,25 +303,11 @@ const lavaLampGame = {
     }
     ctx.lineTo(W, 0);
     ctx.closePath();
-    {
-      const [r0, g0, b0] = lavaRGB(1.0);
-      const [r1, g1, b1] = lavaRGB(1 - D / H);
-      const grd = ctx.createLinearGradient(0, 0, 0, D);
-      grd.addColorStop(0, `rgb(${r0},${g0},${b0})`);
-      grd.addColorStop(1, `rgb(${r1},${g1},${b1})`);
-      ctx.fillStyle = grd;
-    }
+    ctx.fillStyle = this._poolGrads.topBody;
     ctx.fill();
     // Glow поверх — колоколообразный, пиком на краю бассейна (скрывает чёрный шов)
-    {
-      const [r, g, b] = lavaRGB(1 - D / H);
-      const grd = ctx.createLinearGradient(0, D - wA, 0, D + GH);
-      grd.addColorStop(0,                  `rgba(${r},${g},${b},0.00)`);
-      grd.addColorStop(wA / (wA + GH),     `rgba(${r},${g},${b},0.55)`);
-      grd.addColorStop(1,                  `rgba(${r},${g},${b},0.00)`);
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, D - wA, W, wA + GH);
-    }
+    ctx.fillStyle = this._poolGrads.topGlow;
+    ctx.fillRect(0, D - wA, W, wA + GH);
 
     // ── Нижний бассейн ────────────────────────────────────────────
     // Тело бассейна
@@ -292,26 +321,11 @@ const lavaLampGame = {
     }
     ctx.lineTo(W, H);
     ctx.closePath();
-    {
-      const [r0, g0, b0] = lavaRGB(D / H);
-      const [r1, g1, b1] = lavaRGB(0.0);
-      const grd = ctx.createLinearGradient(0, H - D, 0, H);
-      grd.addColorStop(0, `rgb(${r0},${g0},${b0})`);
-      grd.addColorStop(1, `rgb(${r1},${g1},${b1})`);
-      ctx.fillStyle = grd;
-    }
+    ctx.fillStyle = this._poolGrads.botBody;
     ctx.fill();
     // Glow поверх нижнего бассейна
-    {
-      const [r, g, b] = lavaRGB(D / H);
-      const bD = H - D;
-      const grd = ctx.createLinearGradient(0, bD - GH, 0, bD + wA);
-      grd.addColorStop(0,                  `rgba(${r},${g},${b},0.00)`);
-      grd.addColorStop(GH / (GH + wA),     `rgba(${r},${g},${b},0.55)`);
-      grd.addColorStop(1,                  `rgba(${r},${g},${b},0.00)`);
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, bD - GH, W, GH + wA);
-    }
+    ctx.fillStyle = this._poolGrads.botGlow;
+    ctx.fillRect(0, H - D - GH, W, GH + wA);
   },
 
   handleInput() {},

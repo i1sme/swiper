@@ -2,16 +2,21 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ZenWidget</title>
   <script>
-    if (window.__TAURI__) {
+    (() => {
       const h = document.documentElement;
-      h.classList.add('tauri');
-      const ua = navigator.userAgent;
-      if (ua.includes('Mac'))     h.classList.add('macos');
-      else if (ua.includes('Win')) h.classList.add('windows');
-    }
+      if (window.__TAURI__) {
+        h.classList.add('tauri');
+        const ua = navigator.userAgent;
+        if (ua.includes('Mac'))     h.classList.add('macos');
+        else if (ua.includes('Win')) h.classList.add('windows');
+      } else if (window.Capacitor) {
+        h.classList.add('capacitor');
+        h.classList.add(window.Capacitor.getPlatform()); // 'ios' | 'android'
+      }
+    })();
   </script>
   <link rel="stylesheet" href="style.css" />
 </head>

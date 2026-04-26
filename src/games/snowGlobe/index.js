@@ -36,6 +36,21 @@ const snowGlobeGame = {
     this._pmx = this._cx;
     this._pmy = this._cy;
 
+    const { _cx: cx, _cy: cy, _gR: gR } = this;
+    this._bgGrad = ctx.createRadialGradient(cx - gR * 0.25, cy - gR * 0.2, 0, cx, cy, gR);
+    this._bgGrad.addColorStop(0,    '#18264a');
+    this._bgGrad.addColorStop(0.65, '#0d1830');
+    this._bgGrad.addColorStop(1,    '#060c1c');
+
+    this._sheenGrad = ctx.createRadialGradient(cx - gR * 0.38, cy - gR * 0.3, gR * 0.05, cx, cy, gR);
+    this._sheenGrad.addColorStop(0,   'rgba(255,255,255,0.10)');
+    this._sheenGrad.addColorStop(0.4, 'rgba(255,255,255,0.03)');
+    this._sheenGrad.addColorStop(1,   'rgba(255,255,255,0)');
+
+    this._vigGrad = ctx.createRadialGradient(cx, cy, gR * 0.38, cx, cy, gR);
+    this._vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    this._vigGrad.addColorStop(1, 'rgba(0,4,20,0.54)');
+
     this._userImage = null;
     this._btnReset  = null;
 
@@ -125,10 +140,7 @@ const snowGlobeGame = {
     ctx.clip();
     ctx.drawImage(img, cx - iW * sc / 2, cy - iH * sc / 2, iW * sc, iH * sc);
     // Edge vignette so edges merge with the globe glass
-    const vig = ctx.createRadialGradient(cx, cy, gR * 0.38, cx, cy, gR);
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(0,4,20,0.54)');
-    ctx.fillStyle = vig;
+    ctx.fillStyle = this._vigGrad;
     ctx.beginPath();
     ctx.arc(cx, cy, gR, 0, Math.PI * 2);
     ctx.fill();
@@ -198,11 +210,7 @@ const snowGlobeGame = {
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, gR, 0, Math.PI * 2);
-    const bg = ctx.createRadialGradient(cx - gR * 0.25, cy - gR * 0.2, 0, cx, cy, gR);
-    bg.addColorStop(0,   '#18264a');
-    bg.addColorStop(0.65,'#0d1830');
-    bg.addColorStop(1,   '#060c1c');
-    ctx.fillStyle = bg;
+    ctx.fillStyle = this._bgGrad;
     ctx.fill();
     ctx.restore();
 
@@ -224,13 +232,9 @@ const snowGlobeGame = {
 
     // Glass sheen
     ctx.save();
-    const sheen = ctx.createRadialGradient(cx - gR * 0.38, cy - gR * 0.3, gR * 0.05, cx, cy, gR);
-    sheen.addColorStop(0,   'rgba(255,255,255,0.10)');
-    sheen.addColorStop(0.4, 'rgba(255,255,255,0.03)');
-    sheen.addColorStop(1,   'rgba(255,255,255,0)');
     ctx.beginPath();
     ctx.arc(cx, cy, gR, 0, Math.PI * 2);
-    ctx.fillStyle   = sheen;
+    ctx.fillStyle   = this._sheenGrad;
     ctx.fill();
     ctx.strokeStyle = 'rgba(160,190,255,0.28)';
     ctx.lineWidth   = 2;

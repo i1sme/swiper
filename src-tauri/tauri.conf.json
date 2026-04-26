@@ -33,7 +33,7 @@
       "shortDescription": "Relaxing mini-games widget",
       "longDescription": "A floating widget with a collection of relaxing mini-games. Perfect for micro-breaks during work or study.",
       "macOS": {
-        "minimumSystemVersion": "10.15"
+        "minimumSystemVersion": "11.0"
       },
       "targets": "all"
     },

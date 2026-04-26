@@ -13,8 +13,14 @@ const ROCK_DEFS = [
   { fx: 0.45, fy: 0.75, rx: 12, ry:  9, angle: -0.1 },
 ];
 
-function buildRocks(W, H) {
-  return ROCK_DEFS.map(d => ({ ...d, x: d.fx * W, y: d.fy * H }));
+function buildRocks(W, H, ctx) {
+  return ROCK_DEFS.map(d => {
+    const grad = ctx.createRadialGradient(-d.rx * 0.25, -d.ry * 0.3, 2, 0, 0, d.rx);
+    grad.addColorStop(0,   '#9a9a9a');
+    grad.addColorStop(0.5, '#6e6e6e');
+    grad.addColorStop(1,   '#4a4a4a');
+    return { ...d, x: d.fx * W, y: d.fy * H, grad };
+  });
 }
 
 const zenGardenGame = {
@@ -28,7 +34,7 @@ const zenGardenGame = {
     this._W      = canvas.width;
     this._H      = canvas.height;
 
-    this._rocks = buildRocks(this._W, this._H);
+    this._rocks = buildRocks(this._W, this._H, ctx);
 
     // Offscreen: постоянный слой с узорами граблей
     this._off    = document.createElement('canvas');
@@ -250,14 +256,9 @@ const zenGardenGame = {
     ctx.shadowOffsetX = 3;
     ctx.shadowOffsetY = 4;
 
-    const g = ctx.createRadialGradient(-r.rx * 0.25, -r.ry * 0.3, 2, 0, 0, r.rx);
-    g.addColorStop(0,   '#9a9a9a');
-    g.addColorStop(0.5, '#6e6e6e');
-    g.addColorStop(1,   '#4a4a4a');
-
     ctx.beginPath();
     ctx.ellipse(0, 0, r.rx, r.ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = g;
+    ctx.fillStyle = r.grad;
     ctx.fill();
 
     // Блик

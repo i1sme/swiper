@@ -8,16 +8,29 @@ export class WidgetShell {
 
     this._drag = { active: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
 
-    this._onMouseDown = this._onMouseDown.bind(this);
-    this._onMouseMove = this._onMouseMove.bind(this);
-    this._onMouseUp   = this._onMouseUp.bind(this);
+    this._onMouseDown  = this._onMouseDown.bind(this);
+    this._onMouseMove  = this._onMouseMove.bind(this);
+    this._onMouseUp    = this._onMouseUp.bind(this);
+    this._onTouchStart = this._onTouchStart.bind(this);
+    this._onTouchMove  = this._onTouchMove.bind(this);
+    this._onTouchEnd   = this._onTouchEnd.bind(this);
   }
 
   init() {
     this._setupDrag();
     this._buildPickerOverlay();
     this._setupButtons();
-    if (!window.__TAURI__) this.widget.style.position = 'relative';
+    if (!window.__TAURI__ && !window.Capacitor) this.widget.style.position = 'relative';
+
+    if (window.__TAURI__) {
+      this._expandedH = window.innerHeight;
+      this._onWindowResize = () => {
+        if (!this.widget.classList.contains('minimized')) {
+          this._expandedH = window.innerHeight;
+        }
+      };
+      window.addEventListener('resize', this._onWindowResize);
+    }
   }
 
   // Устанавливает начальную игру (вызывается из index.html вместо manager.switchTo)
@@ -29,17 +42,15 @@ export class WidgetShell {
 
   _setupDrag() {
     this.header.addEventListener('mousedown', this._onMouseDown);
+    if (!window.__TAURI__ && !window.Capacitor) {
+      this.header.addEventListener('touchstart', this._onTouchStart, { passive: false });
+    }
   }
 
-  _onMouseDown(e) {
-    if (e.target.closest('button')) return;
-    if (window.__TAURI__) {
-      window.__TAURI__.window.getCurrent().startDragging();
-      return;
-    }
+  _beginDrag(clientX, clientY) {
     this._drag.active = true;
-    this._drag.startX = e.clientX;
-    this._drag.startY = e.clientY;
+    this._drag.startX = clientX;
+    this._drag.startY = clientY;
 
     const rect = this.widget.getBoundingClientRect();
     this._drag.origLeft = rect.left;
@@ -49,23 +60,61 @@ export class WidgetShell {
     this.widget.style.left   = rect.left + 'px';
     this.widget.style.top    = rect.top  + 'px';
     this.widget.style.margin = '0';
+  }
 
+  _updateDrag(clientX, clientY) {
+    if (!this._drag.active) return;
+    const dx = clientX - this._drag.startX;
+    const dy = clientY - this._drag.startY;
+    this.widget.style.left = (this._drag.origLeft + dx) + 'px';
+    this.widget.style.top  = (this._drag.origTop  + dy) + 'px';
+  }
+
+  _onMouseDown(e) {
+    if (e.target.closest('button')) return;
+    if (window.__TAURI__) {
+      window.__TAURI__.window.getCurrent().startDragging();
+      return;
+    }
+    if (window.Capacitor) return;
+    this._beginDrag(e.clientX, e.clientY);
     document.addEventListener('mousemove', this._onMouseMove);
     document.addEventListener('mouseup',   this._onMouseUp);
   }
 
   _onMouseMove(e) {
-    if (!this._drag.active) return;
-    const dx = e.clientX - this._drag.startX;
-    const dy = e.clientY - this._drag.startY;
-    this.widget.style.left = (this._drag.origLeft + dx) + 'px';
-    this.widget.style.top  = (this._drag.origTop  + dy) + 'px';
+    this._updateDrag(e.clientX, e.clientY);
   }
 
   _onMouseUp() {
     this._drag.active = false;
     document.removeEventListener('mousemove', this._onMouseMove);
     document.removeEventListener('mouseup',   this._onMouseUp);
+  }
+
+  _onTouchStart(e) {
+    if (e.target.closest('button')) return;
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    this._beginDrag(t.clientX, t.clientY);
+    document.addEventListener('touchmove', this._onTouchMove, { passive: false });
+    document.addEventListener('touchend',  this._onTouchEnd);
+    document.addEventListener('touchcancel', this._onTouchEnd);
+  }
+
+  _onTouchMove(e) {
+    if (!this._drag.active || e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    this._updateDrag(t.clientX, t.clientY);
+  }
+
+  _onTouchEnd() {
+    this._drag.active = false;
+    document.removeEventListener('touchmove',   this._onTouchMove);
+    document.removeEventListener('touchend',    this._onTouchEnd);
+    document.removeEventListener('touchcancel', this._onTouchEnd);
   }
 
   // --- picker overlay ---
@@ -75,13 +124,11 @@ export class WidgetShell {
     this._picker.id = 'game-picker';
     this._picker.classList.add('hidden');
     document.getElementById('widget-body').appendChild(this._picker);
-  }
 
-  _refreshPicker() {
-    this._picker.innerHTML = '';
     for (const game of this.manager.games.values()) {
       const btn = document.createElement('button');
-      btn.className = 'picker-item' + (game.name === this._currentName ? ' active' : '');
+      btn.className = 'picker-item';
+      btn.dataset.name = game.name;
 
       const iconEl = document.createElement('span');
       iconEl.className   = 'picker-icon';
@@ -98,6 +145,12 @@ export class WidgetShell {
       });
 
       this._picker.appendChild(btn);
+    }
+  }
+
+  _refreshPicker() {
+    for (const btn of this._picker.children) {
+      btn.classList.toggle('active', btn.dataset.name === this._currentName);
     }
   }
 
@@ -130,13 +183,11 @@ export class WidgetShell {
     document.getElementById('btn-minimize').addEventListener('click', () => {
       if (window.__TAURI__) {
         const win = window.__TAURI__.window.getCurrent();
+        const wasMin = this.widget.classList.contains('minimized');
+        if (!wasMin) this._expandedH = window.innerHeight;
         const isNowMin = this.widget.classList.toggle('minimized');
-        if (isNowMin) {
-          this._expandedH = window.innerHeight;
-          win.setSize(new window.__TAURI__.window.LogicalSize(window.innerWidth, 36));
-        } else {
-          win.setSize(new window.__TAURI__.window.LogicalSize(window.innerWidth, this._expandedH ?? 316));
-        }
+        const targetH  = isNowMin ? 36 : (this._expandedH ?? 316);
+        win.setSize(new window.__TAURI__.window.LogicalSize(window.innerWidth, targetH));
         if (isNowMin && this._pickerOpen) this._closePicker();
         return;
       }
@@ -155,8 +206,15 @@ export class WidgetShell {
   }
 
   destroy() {
-    this.header.removeEventListener('mousedown', this._onMouseDown);
-    document.removeEventListener('mousemove', this._onMouseMove);
-    document.removeEventListener('mouseup',   this._onMouseUp);
+    this.header.removeEventListener('mousedown',  this._onMouseDown);
+    this.header.removeEventListener('touchstart', this._onTouchStart);
+    document.removeEventListener('mousemove',  this._onMouseMove);
+    document.removeEventListener('mouseup',    this._onMouseUp);
+    document.removeEventListener('touchmove',  this._onTouchMove);
+    document.removeEventListener('touchend',   this._onTouchEnd);
+    document.removeEventListener('touchcancel', this._onTouchEnd);
+    if (this._onWindowResize) {
+      window.removeEventListener('resize', this._onWindowResize);
+    }
   }
 }

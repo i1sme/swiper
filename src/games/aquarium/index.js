@@ -46,6 +46,16 @@ const aquariumGame = {
     this._bubbles = [];
     this._bTimer  = 0;
 
+    // Кешированные градиенты — ширина/высота фиксированы пока canvas не пересоздан
+    this._bgGrad = ctx.createLinearGradient(0, 0, 0, this._H);
+    this._bgGrad.addColorStop(0,    '#051520');
+    this._bgGrad.addColorStop(0.55, '#071e2e');
+    this._bgGrad.addColorStop(1,    '#030810');
+
+    this._rayGrad = ctx.createLinearGradient(0, 0, 0, this._H);
+    this._rayGrad.addColorStop(0, 'rgba(170,215,255,1)');
+    this._rayGrad.addColorStop(1, 'rgba(170,215,255,0)');
+
     this._onClick = this._onClick.bind(this);
     canvas.addEventListener('mousedown',  this._onClick);
     canvas.addEventListener('touchstart', this._onClick, { passive: true });
@@ -149,11 +159,7 @@ const aquariumGame = {
     }
 
     // Draw
-    const wg = ctx.createLinearGradient(0, 0, 0, H);
-    wg.addColorStop(0,   '#051520');
-    wg.addColorStop(0.55,'#071e2e');
-    wg.addColorStop(1,   '#030810');
-    ctx.fillStyle = wg;
+    ctx.fillStyle = this._bgGrad;
     ctx.fillRect(0, 0, W, H);
 
     this._drawRays(ctx, W, H, t);
@@ -200,13 +206,10 @@ const aquariumGame = {
   _drawRays(ctx, W, H, t) {
     ctx.save();
     ctx.globalAlpha = 0.045;
+    ctx.fillStyle   = this._rayGrad;
     for (let i = 0; i < 5; i++) {
       const x  = W * (0.12 + i * 0.19) + Math.sin(t * 0.28 + i) * W * 0.035;
       const hw = W * (0.03 + i % 2 * 0.015);
-      const rg = ctx.createLinearGradient(x, 0, x, H);
-      rg.addColorStop(0, 'rgba(170,215,255,1)');
-      rg.addColorStop(1, 'rgba(170,215,255,0)');
-      ctx.fillStyle = rg;
       ctx.beginPath();
       ctx.moveTo(x - hw, 0); ctx.lineTo(x + hw, 0);
       ctx.lineTo(x + hw * 2.2, H); ctx.lineTo(x - hw * 2.2, H);

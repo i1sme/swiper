@@ -162,6 +162,42 @@ html.tauri body {
   display: block;
 }
 
+/* ── Capacitor mobile mode (iOS/Android) ── */
+html.capacitor, html.capacitor body {
+  background: var(--bg-body);
+  min-height: 100vh;
+  height: 100vh;
+  display: block;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+html.capacitor #widget {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+html.capacitor #widget-header {
+  cursor: default;
+}
+
+html.capacitor #widget-header:active {
+  cursor: default;
+}
+
+html.capacitor #widget-body {
+  height: calc(100vh - var(--header-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
 html.tauri #widget {
   position: fixed;
   inset: 0;

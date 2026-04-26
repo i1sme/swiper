@@ -34,6 +34,10 @@ const inkGame = {
     this._lastY  = -1;
     this._hasInk = false;
 
+    this._vigGrad = ctx.createRadialGradient(this._W / 2, this._H / 2, 0, this._W / 2, this._H / 2, Math.hypot(this._W, this._H) * 0.55);
+    this._vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    this._vigGrad.addColorStop(1, 'rgba(0,0,0,0.18)');
+
     this._onDown  = this._onDown.bind(this);
     this._onMove  = this._onMove.bind(this);
     this._onUp    = this._onUp.bind(this);
@@ -160,10 +164,7 @@ const inkGame = {
     ctx.restore();
 
     // Subtle paper texture vignette
-    const vig = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * 0.55);
-    vig.addColorStop(0,   'rgba(0,0,0,0)');
-    vig.addColorStop(1,   'rgba(0,0,0,0.18)');
-    ctx.fillStyle = vig;
+    ctx.fillStyle = this._vigGrad;
     ctx.fillRect(0, 0, W, H);
 
     // Hint

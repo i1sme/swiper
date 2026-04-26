@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Tauri build artefacts
+src-tauri/target/
+
+# Capacitor generated platforms (re-create with `npx cap add ios|android`)
+ios/
+android/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and caches
+*.log
+dist/
+.cache/

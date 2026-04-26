@@ -49,6 +49,8 @@ const campfireGame = {
 
     this._drag     = null; // { log, offsetX, offsetY, fromSlot }
 
+    this._pitSprite = this._buildPitSprite();
+
     this._onDown  = this._onDown.bind(this);
     this._onMove  = this._onMove.bind(this);
     this._onUp    = this._onUp.bind(this);
@@ -290,33 +292,40 @@ const campfireGame = {
     }
   },
 
-  _drawPit(ctx) {
-    const cx = this._pitX, cy = this._pitY;
+  _buildPitSprite() {
+    const PAD = 16;
+    const w = (FIREPIT_R + PAD) * 2;
+    const h = (FIREPIT_R + PAD) * 2;
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const o = off.getContext('2d');
+    const cx = w / 2, cy = h / 2;
 
-    // Внешнее кольцо камней
-    ctx.save();
     for (let i = 0; i < 10; i++) {
       const a  = (i / 10) * Math.PI * 2;
       const sx = cx + Math.cos(a) * FIREPIT_R;
       const sy = cy + Math.sin(a) * FIREPIT_R * 0.65;
       const sr = 7 + Math.sin(i * 1.7) * 2;
-      const sg = ctx.createRadialGradient(sx - 1, sy - 1, 0, sx, sy, sr);
+      const sg = o.createRadialGradient(sx - 1, sy - 1, 0, sx, sy, sr);
       sg.addColorStop(0, '#6e6e72');
       sg.addColorStop(1, '#2a2a2e');
-      ctx.fillStyle = sg;
-      ctx.beginPath();
-      ctx.ellipse(sx, sy, sr * 1.2, sr * 0.7, a, 0, Math.PI * 2);
-      ctx.fill();
+      o.fillStyle = sg;
+      o.beginPath();
+      o.ellipse(sx, sy, sr * 1.2, sr * 0.7, a, 0, Math.PI * 2);
+      o.fill();
     }
-    ctx.restore();
 
-    // Тёмное основание золы
-    ctx.save();
-    ctx.fillStyle = '#18181c';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, FIREPIT_R - 8, (FIREPIT_R - 8) * 0.62, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    o.fillStyle = '#18181c';
+    o.beginPath();
+    o.ellipse(cx, cy, FIREPIT_R - 8, (FIREPIT_R - 8) * 0.62, 0, 0, Math.PI * 2);
+    o.fill();
+
+    return { canvas: off, halfW: w / 2, halfH: h / 2 };
+  },
+
+  _drawPit(ctx) {
+    const s = this._pitSprite;
+    ctx.drawImage(s.canvas, this._pitX - s.halfW, this._pitY - s.halfH);
   },
 
   _drawReserveArea(ctx) {

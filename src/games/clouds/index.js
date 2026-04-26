@@ -58,6 +58,18 @@ const cloudsGame = {
       speed: 0.5 + Math.random() * 1.0,
     }));
 
+    // Кешированные градиенты
+    this._skyGrad = ctx.createLinearGradient(0, 0, 0, this._H);
+    this._skyGrad.addColorStop(0,   '#1a2a4a');
+    this._skyGrad.addColorStop(0.5, '#2a4a7a');
+    this._skyGrad.addColorStop(1,   '#3a6aaa');
+
+    this._moonGrad = ctx.createRadialGradient(this._W - 44, 28, 2, this._W - 40, 32, 14);
+    this._moonGrad.addColorStop(0, '#fff9e0');
+    this._moonGrad.addColorStop(1, '#f0c060');
+
+    this._puffSprite = this._buildPuffSprite();
+
     this._onDown  = this._onDown.bind(this);
     this._onMove  = this._onMove.bind(this);
     this._onUp    = this._onUp.bind(this);
@@ -69,6 +81,21 @@ const cloudsGame = {
     canvas.addEventListener('touchstart', this._onTouch, { passive: true });
     canvas.addEventListener('touchmove',  this._onTouch, { passive: true });
     canvas.addEventListener('touchend',   this._onUp);
+  },
+
+  _buildPuffSprite() {
+    const SZ = 80;
+    const off = document.createElement('canvas');
+    off.width = off.height = SZ;
+    const o = off.getContext('2d');
+    const r = SZ / 2;
+    const grad = o.createRadialGradient(r, r - r * 0.2, r * 0.1, r, r, r);
+    grad.addColorStop(0,   'rgba(255,255,255,1)');
+    grad.addColorStop(0.6, 'rgba(220,235,255,0.85)');
+    grad.addColorStop(1,   'rgba(180,210,255,0)');
+    o.fillStyle = grad;
+    o.fillRect(0, 0, SZ, SZ);
+    return { canvas: off, size: SZ };
   },
 
   // --- ввод ---
@@ -185,11 +212,7 @@ const cloudsGame = {
     // --- Рисование ---
 
     // Небо — вертикальный градиент
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0,   '#1a2a4a');
-    sky.addColorStop(0.5, '#2a4a7a');
-    sky.addColorStop(1,   '#3a6aaa');
-    ctx.fillStyle = sky;
+    ctx.fillStyle = this._skyGrad;
     ctx.fillRect(0, 0, W, H);
 
     // Звёзды
@@ -199,10 +222,7 @@ const cloudsGame = {
     ctx.save();
     ctx.beginPath();
     ctx.arc(W - 40, 32, 14, 0, Math.PI * 2);
-    const moonGrad = ctx.createRadialGradient(W - 44, 28, 2, W - 40, 32, 14);
-    moonGrad.addColorStop(0, '#fff9e0');
-    moonGrad.addColorStop(1, '#f0c060');
-    ctx.fillStyle = moonGrad;
+    ctx.fillStyle = this._moonGrad;
     ctx.shadowColor = 'rgba(240,200,80,.5)';
     ctx.shadowBlur  = 18;
     ctx.fill();
@@ -230,18 +250,12 @@ const cloudsGame = {
     ctx.save();
     ctx.globalAlpha = c.alpha;
 
+    const sprite = this._puffSprite.canvas;
     for (const p of puffs) {
       const gx = c.x + p.dx;
       const gy = c.y + p.dy;
-      const grad = ctx.createRadialGradient(gx, gy - p.r * 0.2, p.r * 0.1, gx, gy, p.r);
-      grad.addColorStop(0,   'rgba(255,255,255,1)');
-      grad.addColorStop(0.6, 'rgba(220,235,255,0.85)');
-      grad.addColorStop(1,   'rgba(180,210,255,0)');
-
-      ctx.beginPath();
-      ctx.arc(gx, gy, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+      const d  = p.r * 2;
+      ctx.drawImage(sprite, gx - p.r, gy - p.r, d, d);
     }
 
     ctx.restore();

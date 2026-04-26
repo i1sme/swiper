@@ -32,6 +32,8 @@ const newtonCradleGame = {
 
     this._initState();
 
+    this._buildSprites();
+
     this._onDown  = this._onDown.bind(this);
     this._onMove  = this._onMove.bind(this);
     this._onUp    = this._onUp.bind(this);
@@ -42,6 +44,60 @@ const newtonCradleGame = {
     canvas.addEventListener('touchstart', this._onDown, { passive: true });
     canvas.addEventListener('touchmove',  this._onMove, { passive: true });
     canvas.addEventListener('touchend',   this._onUp);
+  },
+
+  _buildSprites() {
+    const SZ = BALL_R * 2 + 4;
+    const off = document.createElement('canvas');
+    off.width = off.height = SZ;
+    const o = off.getContext('2d');
+    const cx = SZ / 2, cy = SZ / 2;
+    const hx = cx - BALL_R * 0.36;
+    const hy = cy - BALL_R * 0.40;
+
+    const g = o.createRadialGradient(hx, hy, BALL_R * 0.06, cx, cy, BALL_R);
+    g.addColorStop(0,    '#dce8ff');
+    g.addColorStop(0.22, '#a0baf0');
+    g.addColorStop(0.60, '#4a64c0');
+    g.addColorStop(1,    '#0a1440');
+    o.fillStyle = g;
+    o.beginPath(); o.arc(cx, cy, BALL_R, 0, Math.PI * 2); o.fill();
+
+    o.strokeStyle = 'rgba(0,0,28,0.5)';
+    o.lineWidth   = 0.7;
+    o.beginPath(); o.arc(cx, cy, BALL_R, 0, Math.PI * 2); o.stroke();
+
+    o.save();
+    o.globalAlpha = 0.65;
+    const hg = o.createRadialGradient(hx, hy, 0, hx, hy, BALL_R * 0.48);
+    hg.addColorStop(0, 'rgba(255,255,255,0.9)');
+    hg.addColorStop(1, 'rgba(255,255,255,0)');
+    o.fillStyle = hg;
+    o.beginPath(); o.arc(cx, cy, BALL_R, 0, Math.PI * 2); o.fill();
+    o.restore();
+
+    this._ballSprite = off;
+    this._ballSpriteSz = SZ;
+
+    // Frame gradients
+    const barX0 = this._pivots[0]     - BALL_R * 3;
+    const barX1 = this._pivots[N - 1] + BALL_R * 3;
+    const legY1 = PIVOT_Y + 30;
+    const ctx = this._ctx;
+
+    const legL = ctx.createLinearGradient(barX0, PIVOT_Y, barX0 - 5, legY1);
+    legL.addColorStop(0, 'rgba(155,165,205,0.55)');
+    legL.addColorStop(1, 'rgba(55,60,100,0.2)');
+
+    const legR = ctx.createLinearGradient(barX1, PIVOT_Y, barX1 + 5, legY1);
+    legR.addColorStop(0, 'rgba(155,165,205,0.55)');
+    legR.addColorStop(1, 'rgba(55,60,100,0.2)');
+
+    const bar = ctx.createLinearGradient(barX0, PIVOT_Y - 8, barX0, PIVOT_Y);
+    bar.addColorStop(0, 'rgba(205,212,238,0.6)');
+    bar.addColorStop(1, 'rgba(105,112,158,0.4)');
+
+    this._frameGrad = { legL, legR, bar };
   },
 
   _initState() {
@@ -205,12 +261,9 @@ const newtonCradleGame = {
     const legY1 = PIVOT_Y + 30;
 
     // Боковые стойки
-    for (const [lx, ox] of [[barX0, -5], [barX1, 5]]) {
+    for (const [lx, ox, grad] of [[barX0, -5, this._frameGrad.legL], [barX1, 5, this._frameGrad.legR]]) {
       ctx.save();
-      const lg = ctx.createLinearGradient(lx, PIVOT_Y, lx + ox, legY1);
-      lg.addColorStop(0, 'rgba(155,165,205,0.55)');
-      lg.addColorStop(1, 'rgba(55,60,100,0.2)');
-      ctx.strokeStyle = lg;
+      ctx.strokeStyle = grad;
       ctx.lineWidth   = 3;
       ctx.lineCap     = 'round';
       ctx.beginPath();
@@ -225,10 +278,7 @@ const newtonCradleGame = {
     ctx.shadowColor   = 'rgba(0,0,0,0.45)';
     ctx.shadowBlur    = 7;
     ctx.shadowOffsetY = 3;
-    const bg = ctx.createLinearGradient(barX0, PIVOT_Y - barH, barX0, PIVOT_Y);
-    bg.addColorStop(0, 'rgba(205,212,238,0.6)');
-    bg.addColorStop(1, 'rgba(105,112,158,0.4)');
-    ctx.fillStyle = bg;
+    ctx.fillStyle = this._frameGrad.bar;
     ctx.beginPath();
     ctx.roundRect(barX0, PIVOT_Y - barH, barX1 - barX0, barH, 2);
     ctx.fill();
@@ -287,40 +337,8 @@ const newtonCradleGame = {
 
   _drawBall(ctx, i) {
     const b  = this._getBallPos(i);
-    const hx = b.x - BALL_R * 0.36;
-    const hy = b.y - BALL_R * 0.40;
-
-    ctx.save();
-
-    // Основной объём: смещённый градиент
-    const g = ctx.createRadialGradient(hx, hy, BALL_R * 0.06, b.x, b.y, BALL_R);
-    g.addColorStop(0,    '#dce8ff');
-    g.addColorStop(0.22, '#a0baf0');
-    g.addColorStop(0.60, '#4a64c0');
-    g.addColorStop(1,    '#0a1440');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Тонкий тёмный обод
-    ctx.strokeStyle = 'rgba(0,0,28,0.5)';
-    ctx.lineWidth   = 0.7;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Блик — небольшой полупрозрачный овал
-    ctx.globalAlpha = 0.65;
-    const hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, BALL_R * 0.48);
-    hg.addColorStop(0,   'rgba(255,255,255,0.9)');
-    hg.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.fillStyle = hg;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
+    const sz = this._ballSpriteSz;
+    ctx.drawImage(this._ballSprite, b.x - sz / 2, b.y - sz / 2);
   },
 
   _drawHint(ctx, W, H) {

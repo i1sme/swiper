@@ -39,6 +39,9 @@ const firefliesGame = {
     // Звёзды — статичные, рисуются один раз на offscreen
     this._bg = this._buildBg();
 
+    // Кеш-спрайт ауры: один на всех (вариации hue визуально незаметны)
+    this._aura = this._buildAuraSprite();
+
     this._mx = -999;
     this._my = -999;
     this._mSpeed = 0;   // сглаженная скорость мыши (px/событие)
@@ -75,6 +78,20 @@ const firefliesGame = {
       octx.fillStyle = `rgba(255,255,255,${a.toFixed(2)})`;
       octx.fill();
     }
+    return off;
+  },
+
+  _buildAuraSprite() {
+    const SIZE = 64;
+    const off = document.createElement('canvas');
+    off.width = off.height = SIZE;
+    const octx = off.getContext('2d');
+    const r = SIZE / 2;
+    const grd = octx.createRadialGradient(r, r, 0, r, r, r);
+    grd.addColorStop(0, 'hsla(70,100%,75%,1)');
+    grd.addColorStop(1, 'hsla(70,100%,75%,0)');
+    octx.fillStyle = grd;
+    octx.fillRect(0, 0, SIZE, SIZE);
     return off;
   },
 
@@ -172,17 +189,14 @@ const firefliesGame = {
     // Рисуем светлячков двумя проходами: сначала glow, потом точки
     ctx.save();
 
-    // Проход 1: мягкий ореол (большой радиус, низкая непрозрачность)
+    // Проход 1: мягкий ореол через кеш-спрайт (drawImage с прозрачностью)
     for (const f of this._flies) {
       const glow = 0.5 + 0.5 * Math.sin(f.glowPh);
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, f.size * 5 + glow * 4, 0, Math.PI * 2);
-      const grd = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size * 5 + glow * 4);
-      grd.addColorStop(0,   `hsla(${f.hue},100%,75%,${(0.12 + glow * 0.1).toFixed(2)})`);
-      grd.addColorStop(1,   `hsla(${f.hue},100%,75%,0)`);
-      ctx.fillStyle = grd;
-      ctx.fill();
+      const r    = f.size * 5 + glow * 4;
+      ctx.globalAlpha = 0.12 + glow * 0.1;
+      ctx.drawImage(this._aura, f.x - r, f.y - r, r * 2, r * 2);
     }
+    ctx.globalAlpha = 1;
 
     // Проход 2: яркое ядро
     ctx.shadowBlur = 8;

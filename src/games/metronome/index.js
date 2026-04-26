@@ -71,6 +71,8 @@ const metronomeGame = {
       r: 9,
     };
 
+    this._gradCache = this._buildGradients();
+
     this._onDown = this._onDown.bind(this);
     this._onMove = this._onMove.bind(this);
     this._onUp   = this._onUp.bind(this);
@@ -81,6 +83,53 @@ const metronomeGame = {
     canvas.addEventListener('touchstart', this._onDown, { passive: true });
     canvas.addEventListener('touchmove',  this._onMove, { passive: true });
     canvas.addEventListener('touchend',   this._onUp);
+  },
+
+  _buildGradients() {
+    const ctx = this._ctx;
+    const cx  = this._W / 2;
+    const tw = 50, bw = 120;
+    const wW = 20, wH = 13;
+    const { x: btnX, y: btnY, r: btnR } = this._stopBtn;
+
+    const wood = ctx.createLinearGradient(cx - bw / 2, 0, cx + bw / 2, 0);
+    wood.addColorStop(0,    '#160e06');
+    wood.addColorStop(0.08, '#2e1c0a');
+    wood.addColorStop(0.25, '#50320e');
+    wood.addColorStop(0.46, '#6a4418');
+    wood.addColorStop(0.54, '#6a4418');
+    wood.addColorStop(0.75, '#50320e');
+    wood.addColorStop(0.92, '#2e1c0a');
+    wood.addColorStop(1,    '#160e06');
+
+    const sheen = ctx.createLinearGradient(cx - 30, 0, cx + 30, 0);
+    sheen.addColorStop(0,    'rgba(255,210,100,0)');
+    sheen.addColorStop(0.38, 'rgba(255,210,100,0.07)');
+    sheen.addColorStop(0.50, 'rgba(255,210,100,0.11)');
+    sheen.addColorStop(0.62, 'rgba(255,210,100,0.07)');
+    sheen.addColorStop(1,    'rgba(255,210,100,0)');
+
+    const weight = ctx.createLinearGradient(-wW / 2, -wH / 2, wW / 2, wH / 2);
+    weight.addColorStop(0,    '#fff0a0');
+    weight.addColorStop(0.25, '#f0c830');
+    weight.addColorStop(0.6,  '#c08810');
+    weight.addColorStop(1,    '#6a4400');
+
+    const pivot = ctx.createRadialGradient(this._pivotX - 1, this._pivotY - 1, 0, this._pivotX, this._pivotY, 5.5);
+    pivot.addColorStop(0, '#ffe870');
+    pivot.addColorStop(1, '#7a5800');
+
+    const stopBtn = ctx.createRadialGradient(btnX - btnR * 0.3, btnY - btnR * 0.3, 0, btnX, btnY, btnR);
+    stopBtn.addColorStop(0,   '#f0d050');
+    stopBtn.addColorStop(0.6, '#c89020');
+    stopBtn.addColorStop(1,   '#5a3a00');
+
+    const stopBtnPressed = ctx.createRadialGradient(btnX - btnR * 0.3, btnY + 1 - btnR * 0.3, 0, btnX, btnY + 1, btnR);
+    stopBtnPressed.addColorStop(0,   '#c8a020');
+    stopBtnPressed.addColorStop(0.6, '#8a6010');
+    stopBtnPressed.addColorStop(1,   '#5a3a00');
+
+    return { wood, sheen, weight, pivot, stopBtn, stopBtnPressed };
   },
 
   // Позиция грузика (в пространстве canvas)
@@ -226,16 +275,7 @@ const metronomeGame = {
     ctx.closePath();
 
     // Дерево: тёмный орех с горизонтальным волокном
-    const wood = ctx.createLinearGradient(cx - bw / 2, 0, cx + bw / 2, 0);
-    wood.addColorStop(0,    '#160e06');
-    wood.addColorStop(0.08, '#2e1c0a');
-    wood.addColorStop(0.25, '#50320e');
-    wood.addColorStop(0.46, '#6a4418');
-    wood.addColorStop(0.54, '#6a4418');
-    wood.addColorStop(0.75, '#50320e');
-    wood.addColorStop(0.92, '#2e1c0a');
-    wood.addColorStop(1,    '#160e06');
-    ctx.fillStyle = wood;
+    ctx.fillStyle = this._gradCache.wood;
     ctx.fill();
     ctx.restore();
 
@@ -254,13 +294,7 @@ const metronomeGame = {
 
     // Лёгкий вертикальный блик (лак)
     ctx.save();
-    const sheen = ctx.createLinearGradient(cx - 30, 0, cx + 30, 0);
-    sheen.addColorStop(0,    'rgba(255,210,100,0)');
-    sheen.addColorStop(0.38, 'rgba(255,210,100,0.07)');
-    sheen.addColorStop(0.50, 'rgba(255,210,100,0.11)');
-    sheen.addColorStop(0.62, 'rgba(255,210,100,0.07)');
-    sheen.addColorStop(1,    'rgba(255,210,100,0)');
-    ctx.fillStyle = sheen;
+    ctx.fillStyle = this._gradCache.sheen;
     ctx.beginPath();
     ctx.moveTo(cx - tw / 2, caseTop);
     ctx.lineTo(cx + tw / 2, caseTop);
@@ -300,11 +334,7 @@ const metronomeGame = {
     ctx.shadowOffsetY = pressed ? 1 : 3;
 
     // Корпус кнопки — латунный кружок
-    const bg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
-    bg.addColorStop(0,   pressed ? '#c8a020' : '#f0d050');
-    bg.addColorStop(0.6, pressed ? '#8a6010' : '#c89020');
-    bg.addColorStop(1,   '#5a3a00');
-    ctx.fillStyle = bg;
+    ctx.fillStyle = pressed ? this._gradCache.stopBtnPressed : this._gradCache.stopBtn;
     ctx.beginPath();
     ctx.arc(x, y + (pressed ? 1 : 0), r, 0, Math.PI * 2);
     ctx.fill();
@@ -418,10 +448,7 @@ const metronomeGame = {
 
     // Ось (pivot)
     ctx.save();
-    const pg = ctx.createRadialGradient(px - 1, py - 1, 0, px, py, 5.5);
-    pg.addColorStop(0, '#ffe870');
-    pg.addColorStop(1, '#7a5800');
-    ctx.fillStyle   = pg;
+    ctx.fillStyle = this._gradCache.pivot;
     ctx.strokeStyle = 'rgba(0,0,0,0.4)';
     ctx.lineWidth   = 0.8;
     ctx.beginPath();
@@ -446,12 +473,7 @@ const metronomeGame = {
     }
 
     // Тело грузика — прямоугольник со скруглёнными углами
-    const wg = ctx.createLinearGradient(-wW / 2, -wH / 2, wW / 2, wH / 2);
-    wg.addColorStop(0,    '#fff0a0');
-    wg.addColorStop(0.25, '#f0c830');
-    wg.addColorStop(0.6,  '#c08810');
-    wg.addColorStop(1,    '#6a4400');
-    ctx.fillStyle = wg;
+    ctx.fillStyle = this._gradCache.weight;
     ctx.beginPath();
     ctx.roundRect(-wW / 2, -wH / 2, wW, wH, 3);
     ctx.fill();
