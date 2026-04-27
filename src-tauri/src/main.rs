@@ -11,6 +11,22 @@ fn main() {
     let tray = SystemTray::new().with_menu(tray_menu);
 
     tauri::Builder::default()
+        .setup(|app| {
+            // Окно создаётся скрытым (visible: false в tauri.conf.json),
+            // чтобы избежать flash нативного chrome перед нашей подстройкой.
+            // На macOS оставляем decorations: true с titleBarStyle: Overlay
+            // (traffic lights поверх контента + прозрачность + rounded corners).
+            // На остальных платформах нативный заголовок отключаем —
+            // chrome полностью наш.
+            if let Some(window) = app.get_window("main") {
+                #[cfg(not(target_os = "macos"))]
+                {
+                    let _ = window.set_decorations(false);
+                }
+                let _ = window.show();
+            }
+            Ok(())
+        })
         .system_tray(tray)
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {

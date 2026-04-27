@@ -156,6 +156,17 @@ body {
   opacity: 0.55;
 }
 
+#btn-close {
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+#btn-close:hover {
+  background: rgba(220, 80, 80, 0.85);
+  color: #fff;
+}
+
 #game-canvas {
   display: block;
   width: 100%;
@@ -223,11 +234,22 @@ html.tauri #widget-header {
   cursor: grab;
 }
 
-/* Отступ под traffic lights только на macOS */
+html.tauri #widget-header:active {
+  cursor: grabbing;
+}
+
+/* Windows: прозрачность скруглённых углов нестабильна на Win10
+   (за углом проступает белый бэкинг) — оставляем прямоугольное окно. */
+html.tauri.windows #widget {
+  border-radius: 0;
+}
+
+/* macOS: traffic lights отрисовывает система слева, сдвигаем заголовок;
+   наша кнопка close (×) не нужна — закрытие через красный кружок. */
 html.tauri.macos #widget-header {
   padding-left: 76px;
 }
 
-html.tauri #widget-header:active {
-  cursor: grabbing;
+html.tauri.macos #btn-close {
+  display: none;
 }

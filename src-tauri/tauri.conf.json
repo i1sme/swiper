@@ -16,6 +16,7 @@
       "window": {
         "startDragging": true,
         "hide": true,
+        "close": true,
         "setSize": true
       }
     },
@@ -40,6 +41,7 @@
     "security": {
       "csp": null
     },
+    "macOSPrivateApi": true,
     "systemTray": {
       "iconPath": "icons/tray-icon.png",
       "iconAsTemplate": true
@@ -62,7 +64,7 @@
         "alwaysOnTop": true,
         "transparent": true,
         "skipTaskbar": true,
-        "visible": true,
+        "visible": false,
         "center": false,
         "x": 40,
         "y": 40

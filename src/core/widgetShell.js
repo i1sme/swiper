@@ -210,6 +210,23 @@ export class WidgetShell {
         muteBtn.classList.toggle('muted', next);
       });
     }
+
+    const closeBtn = document.getElementById('btn-close');
+    if (closeBtn) {
+      // На Capacitor приложение управляется системой — кнопка не нужна
+      if (window.Capacitor) {
+        closeBtn.style.display = 'none';
+      } else {
+        closeBtn.addEventListener('click', () => {
+          if (window.__TAURI__) {
+            window.__TAURI__.window.getCurrent().close();
+          } else {
+            // В вебе — просто свернём виджет (закрыть страницу нельзя)
+            this.widget.classList.add('minimized');
+          }
+        });
+      }
+    }
   }
 
   _updateLabel() {
