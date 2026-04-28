@@ -55,6 +55,12 @@ body {
   color: var(--text);
   font-weight: 500;
   letter-spacing: .03em;
+  /* Резерв справа, чтобы длинные названия не наплывали на иконки */
+  padding-right: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 #header-controls {

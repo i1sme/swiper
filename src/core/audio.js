@@ -226,11 +226,13 @@ function fire() {
   const ctx = _ensureCtx();
   if (!ctx) return null;
 
+  // Постоянный гул углей — brown noise, lowpass поглубже, чтобы было
+  // тёплое "ш-ш-ш" без свистящих верхов
   const noise  = _noiseSource('brown');
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 600;
-  filter.Q.value = 0.5;
+  filter.frequency.value = 450;
+  filter.Q.value = 0.4;
 
   const g = ctx.createGain();
   g.gain.value = 0;
@@ -242,24 +244,33 @@ function fire() {
   let intensity = 0;
   let crackleTimer = null;
 
+  // Треск — короткий burst шума через bandpass, без тонального осциллятора.
+  // Реальный треск дерева — это удар, не нота, поэтому гладкий envelope
+  // и фильтрованный шум звучат натурально, а square-wave давал "пик".
   function scheduleCrackle() {
     if (!alive || intensity < 0.05) { crackleTimer = null; return; }
-    const wait = (250 + Math.random() * 700) / Math.max(0.25, intensity);
+    const wait = (450 + Math.random() * 1100) / Math.max(0.25, intensity);
     crackleTimer = setTimeout(() => {
       if (!alive) return;
       const t0  = ctx.currentTime;
-      const dur = 0.03 + Math.random() * 0.06;
-      const osc = ctx.createOscillator();
-      osc.type  = 'square';
-      osc.frequency.value = 1400 + Math.random() * 1800;
+      const dur = 0.05 + Math.random() * 0.10;
+
+      const cn = _noiseSource('white');
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 800 + Math.random() * 1200;  // 800–2000 Гц
+      bp.Q.value = 1.6 + Math.random() * 1.2;
+
       const cg = ctx.createGain();
-      const v  = (0.020 + Math.random() * 0.025) * intensity;
+      const v  = (0.015 + Math.random() * 0.020) * intensity;
       cg.gain.setValueAtTime(0.0001, t0);
-      cg.gain.exponentialRampToValueAtTime(v, t0 + 0.004);
+      cg.gain.exponentialRampToValueAtTime(v, t0 + 0.008);
       cg.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(cg).connect(_master);
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.02);
+
+      cn.connect(bp).connect(cg).connect(_master);
+      cn.start(t0);
+      cn.stop(t0 + dur + 0.05);
+
       scheduleCrackle();
     }, wait);
   }
@@ -268,8 +279,8 @@ function fire() {
     setIntensity(i) {
       if (!alive) return;
       intensity = Math.max(0, Math.min(1, i));
-      g.gain.setTargetAtTime(intensity * 0.12, ctx.currentTime, 0.30);
-      filter.frequency.setTargetAtTime(400 + intensity * 700, ctx.currentTime, 0.30);
+      g.gain.setTargetAtTime(intensity * 0.085, ctx.currentTime, 0.30);
+      filter.frequency.setTargetAtTime(350 + intensity * 500, ctx.currentTime, 0.30);
       if (intensity > 0.05 && !crackleTimer) scheduleCrackle();
     },
     stop() {

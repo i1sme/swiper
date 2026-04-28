@@ -123,7 +123,13 @@ const snakeGame = {
 
     if (this._food) next = this._bfsNext(this._food[0], this._food[1]);
     if (!next)      next = this._wander(hx, hy);
-    if (!next)      return;
+    if (!next) {
+      // Полный тупик: голова со всех сторон окружена своим телом, и
+      // BFS до еды не нашёл путь. Не висим — отрезаем хвост, чтобы
+      // открыть себе клетку и продолжить. Не короче, чем MIN_LEN.
+      if (this._body.length > MIN_LEN) this._body.pop();
+      return;
+    }
 
     const [nx, ny] = next;
 

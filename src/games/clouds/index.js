@@ -74,6 +74,9 @@ const cloudsGame = {
     this._onMove  = this._onMove.bind(this);
     this._onUp    = this._onUp.bind(this);
     this._onTouch = this._onTouch.bind(this);
+    // Глобальный сброс drag — если курсор вышел за окно или окно потеряло
+    // фокус, mouseup на canvas не приходит, и облако залипает.
+    this._onGlobalRelease = () => { if (this._drag) this._onUp(); };
 
     canvas.addEventListener('mousedown',  this._onDown);
     canvas.addEventListener('mousemove',  this._onMove);
@@ -81,6 +84,8 @@ const cloudsGame = {
     canvas.addEventListener('touchstart', this._onTouch, { passive: true });
     canvas.addEventListener('touchmove',  this._onTouch, { passive: true });
     canvas.addEventListener('touchend',   this._onUp);
+    window.addEventListener('mouseup', this._onGlobalRelease);
+    window.addEventListener('blur',    this._onGlobalRelease);
   },
 
   _buildPuffSprite() {
@@ -268,6 +273,8 @@ const cloudsGame = {
     this._canvas.removeEventListener('touchstart', this._onTouch);
     this._canvas.removeEventListener('touchmove',  this._onTouch);
     this._canvas.removeEventListener('touchend',   this._onUp);
+    window.removeEventListener('mouseup', this._onGlobalRelease);
+    window.removeEventListener('blur',    this._onGlobalRelease);
     this._canvas.style.cursor = '';
   },
 };

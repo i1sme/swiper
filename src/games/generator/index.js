@@ -7,8 +7,8 @@ const GEN_CX     = 88;
 const GEN_CY     = 108;
 const CRANK_R    = 40;
 const HANDLE_ORB = 32;
-const MAX_OMEGA  = Math.PI * 9;   // ~4.5 об/с = 100% мощность (нужно реально стараться)
-const OMEGA_DECAY = 0.72;         // остаточный коэф. в секунду — быстрее падает без кручения
+const MAX_OMEGA  = Math.PI * 5;   // ~2.5 об/с = 100% мощность (доступно для спокойного кручения)
+const OMEGA_DECAY = 0.86;         // остаточный коэф. в секунду — мягче, инерция держится дольше
 
 // 7-сегментный шрифт: порядок сегментов a,b,c,d,e,f,g
 const SEG = [
@@ -82,15 +82,16 @@ const generatorGame = {
     this._ctx      = ctx;
     this._W        = canvas.width;
     this._H        = canvas.height;
-    this._angle    = 0;
-    this._omega    = 0;
-    this._power    = 0;
-    this._dragging = false;
-    this._prevAng  = 0;
-    this._prevT    = 0;
-    this._bgOff    = 0;
-    this._sparks   = [];
-    this._hint     = true;
+    this._angle       = 0;
+    this._omega       = 0;
+    this._power       = 0;
+    this._smoothPower = 0;   // EMA от _power для плавности фона
+    this._dragging    = false;
+    this._prevAng     = 0;
+    this._prevT       = 0;
+    this._bgOff       = 0;
+    this._sparks      = [];
+    this._hint        = true;
 
     const starRx = Math.floor(this._W / 2);
     const starRw = Math.floor(this._W / 2);
@@ -176,9 +177,14 @@ const generatorGame = {
     this._angle += this._omega * s;
     this._power  = Math.min(1, Math.abs(this._omega) / MAX_OMEGA);
 
+    // Плавная (EMA) копия мощности — нужна для движения фона.
+    // Без неё резкие скачки power давали "дёргающиеся" деревья и поезд.
+    const followRate = 1 - Math.pow(0.001, s); // постоянная времени ~7 сек
+    this._smoothPower += (this._power - this._smoothPower) * Math.min(1, followRate * 8);
+
     this._motor?.setSpeed(this._power);
 
-    this._bgOff = (this._bgOff + this._power * 260 * s) % 260;
+    this._bgOff = (this._bgOff + this._smoothPower * 260 * s) % 260;
 
     // Spark spawn at high power
     if (this._power > 0.6 && Math.random() < this._power * 0.55) {

@@ -1,6 +1,6 @@
 const N_FISH   = 6;
 const FOOD_G   = 28;   // gravity px/s²
-const EAT_R    = 14;   // eat radius px
+const EAT_R    = 18;   // eat radius px
 
 function rnd(lo, hi) { return lo + Math.random() * (hi - lo); }
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -116,10 +116,13 @@ const aquariumGame = {
       }
 
       const M = 35;
-      if (fi.x < M)       ax += fi.speed * 1.2;
-      if (fi.x > W - M)   ax -= fi.speed * 1.2;
-      if (fi.y < M)       ay += fi.speed * 0.9;
-      if (fi.y > H - M)   ay -= fi.speed * 0.9;
+      // У дна рыбе нужно опускаться ближе чем M, чтобы съесть упавший корм
+      // (корм оседает на y = H - 8). Если еды нет — обычная отталкивающая зона.
+      const Mbot = nearFood ? 10 : M;
+      if (fi.x < M)          ax += fi.speed * 1.2;
+      if (fi.x > W - M)      ax -= fi.speed * 1.2;
+      if (fi.y < M)          ay += fi.speed * 0.9;
+      if (fi.y > H - Mbot)   ay -= fi.speed * 0.9;
 
       fi.vx += ax * s;
       fi.vy += ay * s;

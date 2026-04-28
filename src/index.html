@@ -10,8 +10,9 @@
       if (window.__TAURI__) {
         h.classList.add('tauri');
         const ua = navigator.userAgent;
-        if (ua.includes('Mac'))     h.classList.add('macos');
-        else if (ua.includes('Win')) h.classList.add('windows');
+        if (ua.includes('Mac'))        h.classList.add('macos');
+        else if (ua.includes('Win'))   h.classList.add('windows');
+        else if (ua.includes('Linux')) h.classList.add('linux');
       } else if (window.Capacitor) {
         h.classList.add('capacitor');
         h.classList.add(window.Capacitor.getPlatform()); // 'ios' | 'android'

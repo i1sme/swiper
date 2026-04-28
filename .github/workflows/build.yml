@@ -1,0 +1,82 @@
+name: Build desktop bundles
+
+# Запускается:
+#   - автоматически при пуше тега вида v0.1.0, v1.2.3 и т.д.
+#       пример:  git tag v0.1.0 && git push origin v0.1.0
+#   - вручную из вкладки Actions → "Build desktop bundles" → Run workflow
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest      # сборка под Apple Silicon + Intel
+            args: '--target universal-apple-darwin'
+          - platform: windows-latest
+            args: ''
+          - platform: ubuntu-22.04      # 22.04 имеет webkit2gtk-4.0 в репах
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Universal-сборка под macOS требует обе цели
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache cargo registry
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Linux system deps
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.0-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            patchelf
+
+      - name: Install npm deps
+        run: npm ci || npm install
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Создаст черновик GitHub Release и приклеит к нему билды
+          # под все три платформы. После просмотра можно опубликовать руками.
+          tagName: ${{ github.ref_name }}
+          releaseName: 'ZenWidget ${{ github.ref_name }}'
+          releaseBody: |
+            Сборки для трёх платформ.
+
+            - **macOS** — `.dmg` или `.app.tar.gz` (universal: M1/M2/Intel).
+              Не подписан Apple. При первом запуске: правый клик → Открыть.
+            - **Windows** — `.msi`. SmartScreen → "Подробнее" → "Выполнить".
+            - **Linux** — `.AppImage` (универсальный) или `.deb` для Debian/Ubuntu.
+              `chmod +x ZenWidget*.AppImage && ./ZenWidget*.AppImage`
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
