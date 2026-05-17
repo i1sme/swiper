@@ -12,6 +12,11 @@ on:
 
 jobs:
   build:
+    permissions:
+      # GITHUB_TOKEN по умолчанию read-only — для создания Release нужен write.
+      # Альтернативно: Settings → Actions → General → Workflow permissions →
+      # "Read and write permissions". Per-workflow permissions безопаснее.
+      contents: write
     strategy:
       fail-fast: false
       matrix:
