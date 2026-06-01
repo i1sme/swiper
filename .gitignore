@@ -3,6 +3,7 @@ node_modules/
 
 # Tauri build artefacts
 src-tauri/target/
+src-tauri/gen/schemas/
 
 # Capacitor generated platforms (re-create with `npx cap add ios|android`)
 ios/

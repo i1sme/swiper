@@ -10,12 +10,12 @@
     "cap:android": "cap sync android && cap open android"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1"
+    "@tauri-apps/cli": "^2.11.2"
   },
   "dependencies": {
     "@capacitor/android": "^6",
+    "@capacitor/cli": "^6",
     "@capacitor/core": "^6",
-    "@capacitor/ios": "^6",
-    "@capacitor/cli": "^6"
+    "@capacitor/ios": "^6"
   }
 }

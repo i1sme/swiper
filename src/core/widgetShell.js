@@ -75,7 +75,7 @@ export class WidgetShell {
   _onMouseDown(e) {
     if (e.target.closest('button')) return;
     if (window.__TAURI__) {
-      window.__TAURI__.window.getCurrent().startDragging();
+      window.__TAURI__.window.getCurrentWindow().startDragging();
       return;
     }
     if (window.Capacitor) return;
@@ -184,12 +184,12 @@ export class WidgetShell {
   _setupButtons() {
     document.getElementById('btn-minimize').addEventListener('click', () => {
       if (window.__TAURI__) {
-        const win = window.__TAURI__.window.getCurrent();
+        const win = window.__TAURI__.window.getCurrentWindow();
         const wasMin = this.widget.classList.contains('minimized');
         if (!wasMin) this._expandedH = window.innerHeight;
         const isNowMin = this.widget.classList.toggle('minimized');
         const targetH  = isNowMin ? 36 : (this._expandedH ?? 316);
-        win.setSize(new window.__TAURI__.window.LogicalSize(window.innerWidth, targetH));
+        win.setSize(new window.__TAURI__.dpi.LogicalSize(window.innerWidth, targetH));
         if (isNowMin && this._pickerOpen) this._closePicker();
         return;
       }
@@ -219,7 +219,7 @@ export class WidgetShell {
       } else {
         closeBtn.addEventListener('click', () => {
           if (window.__TAURI__) {
-            window.__TAURI__.window.getCurrent().close();
+            window.__TAURI__.window.getCurrentWindow().close();
           } else {
             // В вебе — просто свернём виджет (закрыть страницу нельзя)
             this.widget.classList.add('minimized');
