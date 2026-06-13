@@ -192,6 +192,14 @@ That's it — the picker, drag, resize, mute, FPS throttle and pause-on-hide com
 
 ---
 
+## Privacy
+
+ZenWidget collects nothing, sends nothing, and stores nothing about you — no
+accounts, no analytics, no ads, no network calls. See [PRIVACY.md](PRIVACY.md)
+for the full policy.
+
+---
+
 ## Acknowledgements
 
 Built with [Tauri](https://tauri.app/), [Capacitor](https://capacitorjs.com/), and a stubborn refusal to use a framework.
@@ -202,4 +210,4 @@ Sounds are 100% procedural via Web Audio API — no samples, no licences.
 
 ## License
 
-TBD. Suggestions welcome.
+[MIT](LICENSE) © 2026 i1sme. Free to use, modify and distribute — commercial use included.
