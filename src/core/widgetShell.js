@@ -1,5 +1,12 @@
 import audio from './audio.js';
 
+// Полноэкранный мобильный режим: либо настоящая Capacitor-сборка, либо
+// тестовый ?mobile=1 в браузере телефона — класс .capacitor в обоих случаях
+// ставится стартовым скриптом index.html. Окно занимает весь экран, поэтому
+// его некуда таскать и незачем закрывать своей кнопкой.
+const isMobileShell = () =>
+  !!window.Capacitor || document.documentElement.classList.contains('capacitor');
+
 export class WidgetShell {
   constructor(widget, header, manager) {
     this.widget   = widget;
@@ -22,7 +29,7 @@ export class WidgetShell {
     this._setupDrag();
     this._buildPickerOverlay();
     this._setupButtons();
-    if (!window.__TAURI__ && !window.Capacitor) this.widget.style.position = 'relative';
+    if (!window.__TAURI__ && !isMobileShell()) this.widget.style.position = 'relative';
 
     if (window.__TAURI__) {
       this._expandedH = window.innerHeight;
@@ -44,7 +51,7 @@ export class WidgetShell {
 
   _setupDrag() {
     this.header.addEventListener('mousedown', this._onMouseDown);
-    if (!window.__TAURI__ && !window.Capacitor) {
+    if (!window.__TAURI__ && !isMobileShell()) {
       this.header.addEventListener('touchstart', this._onTouchStart, { passive: false });
     }
   }
@@ -78,7 +85,7 @@ export class WidgetShell {
       window.__TAURI__.window.getCurrentWindow().startDragging();
       return;
     }
-    if (window.Capacitor) return;
+    if (isMobileShell()) return;
     this._beginDrag(e.clientX, e.clientY);
     document.addEventListener('mousemove', this._onMouseMove);
     document.addEventListener('mouseup',   this._onMouseUp);
@@ -214,7 +221,7 @@ export class WidgetShell {
     const closeBtn = document.getElementById('btn-close');
     if (closeBtn) {
       // На Capacitor приложение управляется системой — кнопка не нужна
-      if (window.Capacitor) {
+      if (isMobileShell()) {
         closeBtn.style.display = 'none';
       } else {
         closeBtn.addEventListener('click', () => {

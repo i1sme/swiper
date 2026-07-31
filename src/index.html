@@ -16,6 +16,14 @@
       } else if (window.Capacitor) {
         h.classList.add('capacitor');
         h.classList.add(window.Capacitor.getPlatform()); // 'ios' | 'android'
+      } else if (location.search.includes('mobile')) {
+        // Тестовый режим: открыв страницу как ?mobile=1 в браузере телефона,
+        // получаем тот же полноэкранный layout, что и в Capacitor-сборке.
+        // Нужен, чтобы проверять touch/safe-area/производительность без
+        // установки Xcode и Android Studio.
+        const ua = navigator.userAgent;
+        h.classList.add('capacitor');
+        h.classList.add(/iPhone|iPad|iPod/.test(ua) ? 'ios' : 'android');
       }
     })();
   </script>
